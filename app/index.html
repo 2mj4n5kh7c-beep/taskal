@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Taskal: course tasks synced from your university calendar, plus a weekly lecture tracker.">
+<title>Taskal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: frosted glass toolbar over a soft gradient; course list on the left, the working view on the right; stacks on phones. */
+:root{
+  --bg1:#e6edf6; --bg2:#f2eee5; --bg3:#e3efe9;
+  --glass:rgba(255,255,255,.58); --glass-strong:rgba(255,255,255,.82); --glass-weak:rgba(255,255,255,.35);
+  --stroke:rgba(255,255,255,.75); --hair:rgba(22,34,52,.10);
+  --fg:#16202c; --muted:#5d6a7b; --faint:#8b96a5;
+  --accent:#2f7fc1; --accent-fg:#fff;
+  --danger:#c8432f; --warn:#b97a0c; --ok:#23895b;
+  --shadow:0 10px 30px rgba(30,45,70,.10), 0 1px 2px rgba(30,45,70,.06);
+  --font:"Rubik", -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --r-lg:22px; --r-md:16px; --r-sm:11px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg1:#0e131b; --bg2:#151a22; --bg3:#101a17;
+  --glass:rgba(34,42,56,.58); --glass-strong:rgba(40,49,64,.86); --glass-weak:rgba(34,42,56,.35);
+  --stroke:rgba(255,255,255,.09); --hair:rgba(255,255,255,.09);
+  --fg:#e8edf4; --muted:#9aa6b6; --faint:#6f7b8b;
+  --accent:#6ab0e6; --accent-fg:#0d1622;
+  --danger:#ef7a66; --warn:#e3ac43; --ok:#5cc79a;
+  --shadow:0 10px 30px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg1:#0e131b; --bg2:#151a22; --bg3:#101a17;
+  --glass:rgba(34,42,56,.58); --glass-strong:rgba(40,49,64,.86); --glass-weak:rgba(34,42,56,.35);
+  --stroke:rgba(255,255,255,.09); --hair:rgba(255,255,255,.09);
+  --fg:#e8edf4; --muted:#9aa6b6; --faint:#6f7b8b;
+  --accent:#6ab0e6; --accent-fg:#0d1622;
+  --danger:#ef7a66; --warn:#e3ac43; --ok:#5cc79a;
+  --shadow:0 10px 30px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0; font-family:var(--font); color:var(--fg); font-size:14px; line-height:1.45;
+  background:var(--bg1);
+  background-image:radial-gradient(1200px 700px at 8% -10%, var(--bg3), transparent 60%),
+                   radial-gradient(900px 600px at 100% 0%, var(--bg2), transparent 55%),
+                   linear-gradient(180deg, var(--bg1), var(--bg2));
+  background-attachment:fixed;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--glass-strong)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.glass{background:var(--glass);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);border:1px solid var(--stroke);box-shadow:var(--shadow)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* toolbar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:999px;padding:7px 8px 7px 18px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;letter-spacing:-.01em;margin-right:auto}
+.brand-mark{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  background:linear-gradient(160deg,#7cb8e8,#3f86c7);color:#fff}
+.brand small{font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--glass-weak);border:1px solid var(--hair)}
+.seg button{border:0;background:transparent;padding:6px 16px;border-radius:999px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--glass-strong);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.pill{border:1px solid var(--hair);background:var(--glass-strong);border-radius:999px;padding:7px 14px;font-weight:500;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.pill:hover{filter:brightness(1.03)}
+.pill.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 35%,transparent)}
+.pill.danger{color:var(--danger)}
+.pill.danger.armed{background:var(--danger);color:#fff;border-color:transparent}
+.icon-btn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--hair);background:var(--glass-strong);padding:0}
+.icon-btn.lg{width:44px;height:44px}
+select.pill{appearance:none;-webkit-appearance:none;padding-right:30px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.menu-wrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 8px);min-width:230px;border-radius:var(--r-md);padding:6px;z-index:20;background:var(--glass-strong)}
+.menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:9px 12px;border-radius:9px}
+.menu button:hover{background:var(--glass-weak)}
+.menu hr{border:0;border-top:1px solid var(--hair);margin:5px 6px}
+
+/* shell */
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;padding-block:4px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1400px;margin:0 auto}
+.side{border-radius:var(--r-lg);padding:12px;align-self:start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
+.side h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:14px 10px 6px;font-weight:600}
+.side h3:first-child{margin-top:4px}
+.crs{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:8px 10px;border-radius:12px;text-align:left}
+.crs:hover{background:var(--glass-weak)}
+.crs[aria-current="true"]{background:var(--accent);color:var(--accent-fg)}
+.crs[aria-current="true"] .count{color:inherit;opacity:.85}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c,var(--accent))}
+.crs .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.count{font-size:12px;color:var(--muted)}
+.side .add{color:var(--accent);font-weight:500}
+.archived-toggle{font-size:12px;color:var(--muted)}
+
+.main{min-width:0;display:flex;flex-direction:column;gap:14px}
+.banner{border-radius:var(--r-md);padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  background:color-mix(in srgb,var(--warn) 14%,var(--glass));border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.banner p{margin:0;flex:1;min-width:220px}
+
+/* tasks */
+.section-h{display:flex;align-items:baseline;gap:8px;margin:6px 4px 0}
+.section-h h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.section-h .n{color:var(--faint);font-size:12px}
+.task{--c:var(--accent);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;
+  border-radius:var(--r-md);padding:12px 14px 12px 12px;position:relative;
+  background:color-mix(in srgb,var(--c) 15%,var(--glass));border:1px solid var(--stroke);
+  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:var(--shadow)}
+.task::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:4px;border-radius:4px;background:var(--c)}
+.check{width:24px;height:24px;border-radius:50%;border:2px solid color-mix(in srgb,var(--c) 70%,var(--muted));background:transparent;margin:1px 0 0 8px;padding:0;display:grid;place-items:center;color:#fff}
+.check[aria-pressed="true"]{background:var(--c);border-color:var(--c)}
+.task .t{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.task.done .t{text-decoration:line-through;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);font-size:12.5px;margin-top:2px;align-items:center}
+.meta .late{color:var(--danger);font-weight:500}
+.meta .soon{color:var(--warn);font-weight:500}
+.badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px dashed var(--warn);color:var(--warn)}
+.task .notes{color:var(--muted);font-size:12.5px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.task .acts{display:flex;gap:6px}
+.task .acts a,.task .acts button{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--hair);background:var(--glass-strong);color:var(--muted);padding:0;text-decoration:none}
+.list{display:flex;flex-direction:column;gap:10px}
+.empty{border-radius:var(--r-lg);padding:28px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--fg);font-size:16px;margin-bottom:4px}
+
+/* lectures */
+.week{border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.week .title{flex:1;min-width:200px}
+.week h1{margin:0;font-size:30px;letter-spacing:-.02em;line-height:1.1;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;text-wrap:balance}
+.week h1 .of{font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0}
+.week .range{color:var(--muted);font-weight:500;margin-top:3px}
+.now-pill{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent);color:var(--accent-fg)}
+.now-pill.off{background:var(--glass-weak);color:var(--muted);border:1px solid var(--hair)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:thin}
+.chip{--c:var(--accent);flex:none;display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:500;
+  background:color-mix(in srgb,var(--c) 20%,var(--glass));border:1px solid var(--stroke)}
+.chip b{font-weight:600}
+.chip .ok{color:var(--ok)} .chip .behind{color:var(--warn)}
+.days{display:grid;grid-template-columns:repeat(var(--cols,5),minmax(0,1fr));gap:12px}
+.day{display:flex;flex-direction:column;gap:10px;min-width:0}
+.day-h{border-radius:14px;padding:8px 12px;display:flex;justify-content:space-between;align-items:baseline}
+.day-h b{font-weight:600}
+.day-h span{color:var(--muted);font-size:12px}
+.day-h.today{background:color-mix(in srgb,var(--accent) 22%,var(--glass-strong));border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.sess{--c:var(--accent);border-radius:var(--r-md);padding:10px 10px 10px 14px;position:relative;cursor:pointer;
+  background:color-mix(in srgb,var(--c) 16%,var(--glass));border:1px solid var(--stroke);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow);transition:transform .12s}
+.sess:hover{transform:translateY(-1px)}
+.sess::before{content:"";position:absolute;left:5px;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--c)}
+.sess .top{display:flex;align-items:center;gap:8px}
+.ring{width:20px;height:20px;border-radius:50%;border:2px solid var(--warn);display:grid;place-items:center;flex:none;color:#fff}
+.sess.seen .ring{background:var(--ok);border-color:var(--ok)}
+.sess.future .ring{border-color:var(--faint);opacity:.6}
+.sess .time{font-size:12px;color:var(--muted)}
+.sess .nb{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;padding:0}
+.sess .nb:hover{background:var(--glass-weak)}
+.sess .cn{font-weight:600;margin-top:4px;overflow-wrap:anywhere;line-height:1.25}
+.sess .sub{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:3px;flex-wrap:wrap}
+.kind{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:6px;background:color-mix(in srgb,var(--c) 30%,transparent);color:var(--fg)}
+.sess .note{margin-top:6px;font-size:12px;font-style:italic;color:var(--fg);background:var(--glass-weak);border-radius:8px;padding:4px 8px;overflow-wrap:anywhere}
+.sess.off{opacity:.55;cursor:default}
+.sess.off .ring{display:none}
+.offlabel{font-size:12px;color:var(--muted);font-weight:500}
+.matrix-card{border-radius:var(--r-lg);padding:12px;overflow-x:auto}
+table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
+.matrix th{font-weight:500;color:var(--muted);padding:4px 6px;white-space:nowrap}
+.matrix th.now{color:var(--accent);font-weight:700}
+.matrix td.lbl{white-space:nowrap;padding-right:10px}
+.matrix td.lbl .dot{display:inline-block;margin-right:6px;vertical-align:middle}
+.cell{width:26px;height:26px;border-radius:8px;border:1px solid var(--hair);background:var(--glass-weak);display:grid;place-items:center;padding:0;color:#fff}
+.cell.seen{background:var(--ok);border-color:transparent}
+.cell.missed{border-color:var(--warn)}
+.cell.future{opacity:.45}
+.cell.off{background:transparent;border-style:dashed;cursor:default}
+.cell.half{background:linear-gradient(135deg,var(--ok) 50%,var(--glass-weak) 50%)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--hair)}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(10,16,26,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:30;display:grid;place-items:center;
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal{width:min(560px,100%);max-height:100%;overflow:auto;border-radius:var(--r-lg);background:var(--glass-strong);padding:20px}
+.modal h2{margin:0 0 14px;font-size:20px;letter-spacing:-.01em}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label,.lab{font-size:12px;font-weight:600;color:var(--muted)}
+.inp{border:1px solid var(--hair);background:var(--glass);border-radius:var(--r-sm);padding:9px 11px;width:100%;min-width:0}
+textarea.inp{min-height:76px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:120px}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid transparent;background:var(--c);padding:0}
+.sw[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--glass-strong) inset}
+.foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.foot .left{margin-right:auto}
+.sl{display:grid;grid-template-columns:1.1fr .9fr .9fr 1fr 1.2fr auto;gap:6px;align-items:center;margin-bottom:6px}
+.sl .inp{padding:7px 8px;font-size:13px}
+.hint{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+ol.steps{margin:0 0 14px;padding-left:20px;color:var(--fg)}
+ol.steps li{margin-bottom:4px}
+.drop{border:2px dashed color-mix(in srgb,var(--accent) 50%,var(--hair));border-radius:var(--r-md);padding:22px;text-align:center;color:var(--muted);background:var(--glass-weak)}
+.drop.over{background:color-mix(in srgb,var(--accent) 12%,var(--glass))}
+.result{margin-top:12px;padding:10px 12px;border-radius:var(--r-sm);background:color-mix(in srgb,var(--ok) 14%,var(--glass));font-size:13px}
+.result.err{background:color-mix(in srgb,var(--danger) 14%,var(--glass))}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;padding:10px 18px;border-radius:999px;background:var(--glass-strong);font-weight:500}
+.chk{display:flex;gap:8px;align-items:center;font-size:13.5px}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+.semrow{display:grid;grid-template-columns:1.4fr 1fr .6fr auto;gap:6px;align-items:end;margin-bottom:6px}
+.brk{display:grid;grid-template-columns:1fr 1fr 1.3fr auto;gap:6px;margin-bottom:6px}
+
+@media (max-width:820px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;display:flex;gap:6px;overflow-x:auto;padding:8px;border-radius:999px}
+  .side h3,.side .archived-toggle{display:none}
+  .crs{width:auto;flex:none;padding:7px 12px;border-radius:999px}
+  .crs .name{max-width:160px}
+  .days{grid-template-columns:minmax(0,1fr)}
+  .bar-in{border-radius:22px}
+  .week h1{font-size:25px}
+  .sl{grid-template-columns:1fr 1fr 1fr}
+  .sl .wide{grid-column:span 2}
+  .semrow,.brk{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in glass">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="3" cy="4" r=".6" fill="currentColor"/><circle cx="3" cy="8" r=".6" fill="currentColor"/><circle cx="3" cy="12" r=".6" fill="currentColor"/><path d="M7 4h7M7 8h7M7 12h5"/></svg></span>
+      Taskal
+    </div>
+    <div class="seg" role="group" aria-label="Mode">
+      <button id="modeTasks" type="button">Tasks</button>
+      <button id="modeLect" type="button">Lectures</button>
+    </div>
+    <select id="semSel" class="pill" aria-label="Semester"></select>
+    <button id="importBtn" class="pill" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M2.5 13.5h11"/></svg>
+      <span id="syncLabel">Connect calendar</span></button>
+    <button id="addBtn" class="pill primary" type="button">+ Task</button>
+    <div class="menu-wrap">
+      <button id="moreBtn" class="icon-btn" type="button" aria-label="More options" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+      </button>
+      <div id="menu" class="menu glass" hidden>
+        <button data-act="semesters" type="button">Semesters &amp; holidays…</button>
+        <button data-act="newcourse" type="button">New course…</button>
+        <hr>
+        <button data-act="backup" type="button">Save a backup file</button>
+        <button data-act="restore" type="button">Restore from backup…</button>
+        <hr>
+        <button data-act="example" type="button">Load the example semester</button>
+        <button data-act="empty" type="button">Start empty</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="side glass" id="side" aria-label="Courses"></nav>
+  <main class="main" id="main"></main>
+</div>
+<input type="file" id="fileIcs" accept=".ics,text/calendar" hidden>
+<input type="file" id="fileJson" accept=".json,application/json" hidden>
+
+<script>
+(function(){
+"use strict";
+const KEY="taskal.v1";
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAYS_LONG=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const COLORS=[
+  {c:"#3b7dd8",n:"Deep blue"},{c:"#5aa2e0",n:"Sky"},{c:"#7f9be6",n:"Periwinkle"},{c:"#3aa7b8",n:"Teal"},
+  {c:"#4caf7a",n:"Green"},{c:"#9cc35a",n:"Lime"},{c:"#e2c23c",n:"Yellow"},{c:"#e0a541",n:"Amber"},
+  {c:"#e07a5f",n:"Coral"},{c:"#c56fb0",n:"Orchid"},{c:"#8a7fd1",n:"Violet"},{c:"#8a96a3",n:"Slate"}
+];
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- dates ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseISO=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const sundayOf=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x};
+const today=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
+const fmtShort=d=>d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
+const fmtDay=d=>d.getDate()+"/"+(d.getMonth()+1);
+function rel(due){
+  const ms=due-new Date(), abs=Math.abs(ms), h=abs/36e5, dd=Math.round(abs/864e5);
+  let s;
+  if(h<1) s=Math.max(1,Math.round(abs/6e4))+" min";
+  else if(h<24) s=Math.round(h)+" hr";
+  else if(dd<7) s=dd+(dd===1?" day":" days");
+  else if(dd<30){const w=Math.round(dd/7);s=w+(w===1?" wk":" wks")}
+  else {const m=Math.round(dd/30);s=m+(m===1?" month":" months")}
+  return ms<0? s+" ago" : "in "+s;
+}
+
+/* ---------- storage ---------- */
+let S;
+function load(){
+  try{const raw=localStorage.getItem(KEY); if(raw){const v=JSON.parse(raw); if(v&&v.courses) return normalize(v);} }catch(e){}
+  return example();
+}
+let saveTimer=null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},150);
+}
+function normalize(v){
+  v.semesters=v.semesters||[]; v.courses=v.courses||[]; v.tasks=v.tasks||[]; v.slots=v.slots||[];
+  v.seen=v.seen||{}; v.notes=v.notes||{};
+  v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:""},v.cal||{});
+  v.ui=Object.assign({mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
+  if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
+  return v;
+}
+
+/* ---------- example data ---------- */
+function example(){
+  const t=today(), start=addDays(sundayOf(t),-7);
+  const sem={id:"s1",name:"Semester A",start:iso(start),weeks:13,breaks:[{from:iso(addDays(start,23)),to:iso(addDays(start,23)),label:"Holiday"}]};
+  const C=(id,name,color)=>({id,name,color,semester:"s1",archived:false});
+  const courses=[C("c1","Classical Mechanics","#3b7dd8"),C("c2","Waves and Optics","#5aa2e0"),C("c3","Philosophy of Science","#4caf7a"),C("c4","Introduction to Ethics","#e2c23c")];
+  const at=(days,h,m)=>{const d=addDays(t,days);d.setHours(h,m||0,0,0);return d.toISOString()};
+  const T=(title,course,due,o)=>Object.assign({id:uid(),title,course,due,notes:"",link:"",tentative:false,done:false},o||{});
+  const tasks=[
+    T("Problem set 1","c1",at(-1,23,59),{notes:"Questions 1–5. Submit as a single PDF."}),
+    T("Reading: Popper, Conjectures and Refutations ch. 1","c3",at(2,10,30),{notes:"Read before the discussion group."}),
+    T("Problem set 2","c1",at(6,23,59)),
+    T("Lab report: diffraction grating","c2",at(9,12,0),{notes:"Include error analysis."}),
+    T("Short response paper","c4",at(13,23,59),{tentative:true,notes:"No date on Moodle yet; set to the week the syllabus lists."}),
+    T("Reading: Hume, Enquiry §IV","c3",at(-5,10,30),{done:true})
+  ];
+  const L=(course,wd,s,e,kind,room)=>({id:uid(),course,weekday:wd,start:s,end:e,kind,room});
+  const slots=[
+    L("c1",0,"12:00","13:45","Lecture","Physics 2"),L("c1",3,"12:00","13:45","Lecture","Physics 2"),L("c1",2,"16:00","17:45","Tutorial","Room 105"),
+    L("c2",1,"14:00","15:45","Lecture","Feldman A"),L("c2",3,"08:30","10:00","Tutorial","Room 9"),
+    L("c3",1,"10:30","12:15","Lecture","Humanities 2001"),
+    L("c4",2,"10:30","12:00","Lecture","Humanities 4720"),L("c4",4,"11:00","11:45","Tutorial","Humanities 3300")
+  ];
+  const seen={};
+  slots.forEach((s,i)=>{const d=addDays(start,s.weekday); if(d<t && i%3!==2) seen[s.id+"@"+iso(d)]=true;});
+  const notes={}; const s0=slots[3]; notes[s0.id+"@"+iso(addDays(start,s0.weekday))]="Seen till 00:57";
+  return normalize({version:1,isExample:true,semesters:[sem],activeSemester:"s1",courses,tasks,slots,seen,notes});
+}
+function emptyState(){
+  const start=sundayOf(today());
+  return normalize({version:1,isExample:false,semesters:[{id:uid(),name:"This semester",start:iso(start),weeks:13,breaks:[]}],courses:[],tasks:[],slots:[],seen:{},notes:{}});
+}
+
+/* ---------- Israeli holidays (school breaks), generated from the Hebrew calendar ---------- */
+const IL_HOLIDAYS=[["2026-03-02", "2026-03-02", "Purim"], ["2026-03-31", "2026-04-07", "Pesach"], ["2026-04-20", "2026-04-21", "Yom HaZikaron & Yom HaAtzma’ut"], ["2026-05-20", "2026-05-21", "Shavuot"], ["2026-09-10", "2026-09-12", "Rosh Hashana"], ["2026-09-19", "2026-09-20", "Yom Kippur"], ["2026-09-25", "2026-10-02", "Sukkot"], ["2027-03-22", "2027-03-22", "Purim"], ["2027-04-20", "2027-04-27", "Pesach"], ["2027-05-10", "2027-05-11", "Yom HaZikaron & Yom HaAtzma’ut"], ["2027-06-09", "2027-06-10", "Shavuot"], ["2027-09-30", "2027-10-02", "Rosh Hashana"], ["2027-10-09", "2027-10-10", "Yom Kippur"], ["2027-10-15", "2027-10-22", "Sukkot"], ["2028-03-11", "2028-03-11", "Purim"], ["2028-04-09", "2028-04-16", "Pesach"], ["2028-04-30", "2028-05-01", "Yom HaZikaron & Yom HaAtzma’ut"], ["2028-05-29", "2028-05-30", "Shavuot"], ["2028-09-19", "2028-09-21", "Rosh Hashana"], ["2028-09-28", "2028-09-29", "Yom Kippur"], ["2028-10-04", "2028-10-11", "Sukkot"], ["2029-02-28", "2029-02-28", "Purim"], ["2029-03-29", "2029-04-05", "Pesach"], ["2029-04-17", "2029-04-18", "Yom HaZikaron & Yom HaAtzma’ut"], ["2029-05-18", "2029-05-19", "Shavuot"], ["2029-09-08", "2029-09-10", "Rosh Hashana"], ["2029-09-17", "2029-09-18", "Yom Kippur"], ["2029-09-23", "2029-09-30", "Sukkot"], ["2030-03-18", "2030-03-18", "Purim"], ["2030-04-16", "2030-04-23", "Pesach"], ["2030-05-06", "2030-05-07", "Yom HaZikaron & Yom HaAtzma’ut"], ["2030-06-05", "2030-06-06", "Shavuot"], ["2030-09-26", "2030-09-28", "Rosh Hashana"], ["2030-10-05", "2030-10-06", "Yom Kippur"], ["2030-10-11", "2030-10-18", "Sukkot"], ["2031-03-08", "2031-03-08", "Purim"], ["2031-04-06", "2031-04-13", "Pesach"], ["2031-04-27", "2031-04-28", "Yom HaZikaron & Yom HaAtzma’ut"], ["2031-05-26", "2031-05-27", "Shavuot"]];
+const academicYear=d=>d.getMonth()>=8?d.getFullYear():d.getFullYear()-1; // Israeli academic year starts around October
+const IS_DESKTOP=!!(window.__TAURI__&&window.__TAURI__.core);
+
+/* ---------- helpers ---------- */
+const sem=()=>S.semesters.find(s=>s.id===S.activeSemester)||S.semesters[0];
+const course=id=>S.courses.find(c=>c.id===id);
+const colorOf=id=>(course(id)||{}).color||"#8a96a3";
+const inSem=c=>!sem()||!c.semester||c.semester===sem().id;
+const activeCourses=()=>S.courses.filter(c=>!c.archived&&inSem(c));
+function visibleTasks(){
+  const ids=new Set(activeCourses().map(c=>c.id));
+  return S.tasks.filter(t=>{
+    if(S.ui.course!=="all") return t.course===S.ui.course;
+    return !t.course||ids.has(t.course);
+  });
+}
+function weekStart(s,i){return addDays(sundayOf(parseISO(s.start)),7*i)}
+function currentWeek(s){
+  const d=Math.floor((today()-sundayOf(parseISO(s.start)))/(7*864e5));
+  return Math.min(Math.max(d,0),s.weeks-1);
+}
+function breakFor(s,date){
+  const k=iso(date);
+  const b=(s.breaks||[]).find(b=>b.from<=k&&k<=(b.to||b.from));
+  return b?(b.label||"No classes"):null;
+}
+const skey=(slot,date)=>slot.id+"@"+iso(date);
+function progress(s,courseId){
+  const t=today(); let held=0,seen=0;
+  S.slots.filter(x=>x.course===courseId).forEach(sl=>{
+    for(let w=0;w<s.weeks;w++){
+      const d=addDays(weekStart(s,w),sl.weekday);
+      if(d>t||breakFor(s,d)) continue;
+      held++; if(S.seen[skey(sl,d)]) seen++;
+    }
+  });
+  return {held,seen};
+}
+function toast(msg){
+  const el=document.createElement("div");el.className="toast glass";el.textContent=msg;el.setAttribute("role","status");
+  document.body.appendChild(el);setTimeout(()=>el.remove(),2600);
+}
+
+/* ---------- icons ---------- */
+const I={
+  check:'<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 4.5"/></svg>',
+  link:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h4v4M13 3 7.5 8.5M11 9.5V13H3V5h3.5"/></svg>',
+  edit:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></svg>',
+  note:'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2.5h7l3 3v8H3z"/><path d="M5.5 8h5M5.5 10.5h3.5"/></svg>',
+  clock:'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5" stroke-linecap="round"/></svg>',
+  left:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>',
+  right:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',
+  x:'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'
+};
+
+/* ---------- render: toolbar + sidebar ---------- */
+function renderBar(){
+  $("#modeTasks").setAttribute("aria-pressed",S.ui.mode==="tasks");
+  $("#modeLect").setAttribute("aria-pressed",S.ui.mode==="lectures");
+  const sel=$("#semSel");
+  sel.innerHTML=S.semesters.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
+  sel.value=S.activeSemester||"";
+  sel.hidden=S.semesters.length===0;
+  $("#addBtn").textContent=S.ui.mode==="tasks"?"+ Task":"+ Course";
+}
+function renderSide(){
+  const act=activeCourses();
+  const open=S.tasks.filter(t=>!t.done);
+  const cnt=id=>open.filter(t=>t.course===id).length;
+  const allCnt=open.filter(t=>!t.course||act.some(c=>c.id===t.course)).length;
+  let h=`<h3>${esc(sem()?sem().name:"Courses")}</h3>`;
+  h+=`<button class="crs" data-course="all" aria-current="${S.ui.course==="all"}"><span class="dot" style="--c:var(--accent)"></span><span class="name">All courses</span>${S.ui.mode==="tasks"?`<span class="count tnum">${allCnt}</span>`:""}</button>`;
+  act.forEach(c=>{
+    h+=`<button class="crs" data-course="${esc(c.id)}" aria-current="${S.ui.course===c.id}" title="${esc(c.name)}"><span class="dot" style="--c:${esc(c.color)}"></span><span class="name" dir="auto">${esc(c.name)}</span>${S.ui.mode==="tasks"&&cnt(c.id)?`<span class="count tnum">${cnt(c.id)}</span>`:""}</button>`;
+  });
+  h+=`<button class="crs add" data-act="newcourse">+ Add course</button>`;
+  const arch=S.courses.filter(c=>c.archived);
+  if(arch.length){
+    h+=`<h3>Archived</h3><button class="crs archived-toggle" data-act="togglearch">${S.ui.showArchived?"Hide":"Show"} ${arch.length} archived</button>`;
+    if(S.ui.showArchived) arch.forEach(c=>{h+=`<button class="crs" data-editcourse="${esc(c.id)}" style="opacity:.7"><span class="dot" style="--c:${esc(c.color)}"></span><span class="name" dir="auto">${esc(c.name)}</span></button>`});
+  }
+  $("#side").innerHTML=h;
+}
+
+/* ---------- render: tasks ---------- */
+function taskCard(t){
+  const c=course(t.course), due=t.due?new Date(t.due):null, now=new Date();
+  let dueTxt="";
+  if(due){
+    const cls=!t.done&&due<now?"late":(!t.done&&due-now<2*864e5?"soon":"");
+    dueTxt=`<span class="${cls}" title="${esc(due.toLocaleString())}">${I.clock} ${rel(due)} · ${due.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"})}${due.getHours()||due.getMinutes()?" "+pad(due.getHours())+":"+pad(due.getMinutes()):""}</span>`;
+  }
+  return `<article class="task ${t.done?"done":""}" style="--c:${esc(colorOf(t.course))}">
+    <button class="check" data-toggle="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Mark as not done":"Mark as done"}">${t.done?I.check:""}</button>
+    <div style="min-width:0">
+      <div class="t" dir="auto">${esc(t.title)}</div>
+      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}</div>
+      ${t.notes?`<div class="notes" dir="auto">${esc(t.notes)}</div>`:""}
+    </div>
+    <div class="acts">${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" aria-label="Open in Moodle" title="Open link">${I.link}</a>`:""}<button data-edittask="${esc(t.id)}" aria-label="Edit task" title="Edit">${I.edit}</button></div>
+  </article>`;
+}
+function renderTasks(){
+  const all=visibleTasks(), now=new Date(), week=new Date(now.getTime()+7*864e5);
+  const open=all.filter(t=>!t.done).sort((a,b)=>(a.due?Date.parse(a.due):9e15)-(b.due?Date.parse(b.due):9e15));
+  const groups=[
+    ["Overdue",open.filter(t=>t.due&&new Date(t.due)<now)],
+    ["Next 7 days",open.filter(t=>t.due&&new Date(t.due)>=now&&new Date(t.due)<week)],
+    ["Later",open.filter(t=>t.due&&new Date(t.due)>=week)],
+    ["No date",open.filter(t=>!t.due)]
+  ];
+  const done=all.filter(t=>t.done).sort((a,b)=>Date.parse(b.due||0)-Date.parse(a.due||0));
+  let h=banner();
+  if(!all.length){
+    h+=`<div class="empty glass"><strong>No tasks here yet</strong>Connect your university calendar (Moodle and similar), or add a task with the + Task button.<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="pill primary" data-act="import">Connect calendar</button><button class="pill" data-act="addtask">+ Task</button></div></div>`;
+  }
+  groups.forEach(([name,list])=>{
+    if(!list.length) return;
+    h+=`<div class="section-h"><h2>${name}</h2><span class="n tnum">${list.length}</span></div><div class="list">${list.map(taskCard).join("")}</div>`;
+  });
+  if(done.length){
+    h+=`<div class="section-h"><h2>Done</h2><span class="n tnum">${done.length}</span><button class="pill" style="margin-left:auto;padding:4px 12px;font-size:12px" data-act="toggledone">${S.ui.showDone?"Hide":"Show"}</button></div>`;
+    if(S.ui.showDone) h+=`<div class="list">${done.map(taskCard).join("")}</div>`;
+  }
+  $("#main").innerHTML=h;
+}
+function banner(){
+  if(S.isExample) return `<div class="banner"><p><b>This is an example semester.</b> Look around, then connect your own university calendar or start with an empty one. Everything you add stays on this device.</p>
+  <button class="pill primary" data-act="import">Connect calendar</button><button class="pill" data-act="empty">Start empty</button></div>`;
+  if(S.cal.url && S.cal.linkYear!==academicYear(today())) return `<div class="banner"><p><b>New academic year.</b> Many universities open a new Moodle site every year, so last year’s calendar link may stop working. Paste this year’s link to keep your tasks in sync.</p>
+  <button class="pill primary" data-act="import">Update calendar link</button><button class="pill" data-act="keepyear">It still works</button></div>`;
+  if(S.cal.error) return `<div class="banner"><p><b>Calendar sync failed.</b> ${esc(S.cal.error)}</p><button class="pill primary" data-act="import">Check the link</button></div>`;
+  return "";
+}
+
+/* ---------- render: lectures ---------- */
+function renderLectures(){
+  const s=sem();
+  let h=banner();
+  if(!s){ $("#main").innerHTML=h+`<div class="empty glass"><strong>No semester yet</strong><button class="pill primary" data-act="semesters">Set up a semester</button></div>`; return; }
+  const cur=currentWeek(s);
+  if(S.ui.week==null||S.ui.week>=s.weeks) S.ui.week=cur;
+  const w=S.ui.week, ws=weekStart(s,w), we=addDays(ws,6), isCur=w===cur&&today()>=sundayOf(parseISO(s.start));
+  const courses=activeCourses().filter(c=>S.ui.course==="all"||c.id===S.ui.course);
+  const ids=new Set(courses.map(c=>c.id));
+  const slots=S.slots.filter(x=>ids.has(x.course));
+  const opts=Array.from({length:s.weeks},(_,i)=>`<option value="${i}">Week ${i+1} · ${fmtShort(weekStart(s,i))}${i===cur?" (this week)":""}</option>`).join("");
+  h+=`<section class="week glass" aria-label="Week navigation">
+    <button class="icon-btn lg" data-week="-1" aria-label="Previous week" ${w<=0?"disabled":""}>${I.left}</button>
+    <div class="title"><h1><span>Week ${w+1}</span><span class="of">of ${s.weeks} · ${esc(s.name)}</span><span class="now-pill ${isCur?"":"off"}">${isCur?"This week":(w<cur?"Past week":"Upcoming")}</span></h1>
+      <div class="range tnum">${ws.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"})} – ${we.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</div></div>
+    <select class="pill" id="jump" aria-label="Jump to week">${opts}</select>
+    ${isCur?"":`<button class="pill primary" data-act="thisweek">This week</button>`}
+    <div class="seg" role="group" aria-label="Lectures view"><button data-lv="week" aria-pressed="${S.ui.lecView==="week"}">Week</button><button data-lv="all" aria-pressed="${S.ui.lecView==="all"}">All weeks</button></div>
+    <button class="icon-btn lg" data-week="1" aria-label="Next week" ${w>=s.weeks-1?"disabled":""}>${I.right}</button>
+  </section>`;
+  if(courses.length){
+    h+=`<div class="chips" aria-label="Lectures seen so far">${courses.map(c=>{const p=progress(s,c.id);const behind=p.held-p.seen;return `<span class="chip" style="--c:${esc(c.color)}"><span class="dot" style="--c:${esc(c.color)}"></span><span dir="auto">${esc(c.name)}</span><b class="tnum ${behind?"behind":"ok"}">${p.seen}/${p.held}</b></span>`}).join("")}</div>`;
+  }
+  if(!slots.length){
+    h+=`<div class="empty glass"><strong>No lecture times yet</strong>Open a course and add its weekly lectures and tutorials. They repeat every week of the semester.<div style="margin-top:14px"><button class="pill primary" data-act="${courses.length?"editfirst":"newcourse"}">${courses.length?"Add lecture times":"Add a course"}</button></div></div>`;
+    $("#main").innerHTML=h; $("#jump").value=String(w); return;
+  }
+  if(S.ui.lecView==="week"){
+    const used=new Set(slots.map(x=>x.weekday)); let days=[0,1,2,3,4]; if(used.has(5)) days.push(5); if(used.has(6)) days.push(6);
+    const t=today();
+    h+=`<div class="days" style="--cols:${days.length}">`;
+    days.forEach(d=>{
+      const date=addDays(ws,d), off=breakFor(s,date), isToday=iso(date)===iso(t);
+      const list=slots.filter(x=>x.weekday===d).sort((a,b)=>a.start.localeCompare(b.start));
+      h+=`<div class="day"><div class="day-h glass ${isToday?"today":""}"><b>${DAYS[d]}${isToday?" · Today":""}</b><span class="tnum">${fmtDay(date)}</span></div>`;
+      if(off&&list.length) h+=`<div class="offlabel">No class · ${esc(off)}</div>`;
+      list.forEach(sl=>{
+        const c=course(sl.course), k=skey(sl,date), seen=!!S.seen[k], note=S.notes[k], future=date>t;
+        h+=`<div class="sess ${seen?"seen":""} ${future?"future":""} ${off?"off":""}" style="--c:${esc(c.color)}" ${off?"":`data-seen="${esc(k)}" role="button" tabindex="0" aria-pressed="${seen}" aria-label="${esc(c.name)} ${DAYS_LONG[d]} ${sl.start}: ${seen?"seen":"not seen"}"`}>
+          <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(sl.start)}–${esc(sl.end)}</span>${off?"":`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
+          <div class="cn" dir="auto">${esc(c.name)}</div>
+          <div class="sub">${sl.kind&&sl.kind!=="Lecture"?`<span class="kind">${esc(sl.kind)}</span>`:""}${sl.room?`<span dir="auto">${esc(sl.room)}</span>`:""}</div>
+          ${note?`<div class="note" dir="auto">${esc(note)}</div>`:""}
+        </div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div><p class="hint" style="margin:2px 4px">Tap a session to mark it seen, live or later. Use the note icon for things like “seen till 00:57”.</p>`;
+  } else {
+    const t=today(), sorted=slots.slice().sort((a,b)=>a.course.localeCompare(b.course)||a.weekday-b.weekday||a.start.localeCompare(b.start));
+    h+=`<div class="matrix-card glass"><table class="matrix"><thead><tr><th></th>${Array.from({length:s.weeks},(_,i)=>`<th class="tnum ${i===cur?"now":""}" title="${fmtShort(weekStart(s,i))}">${i===cur?"Now":i+1}</th>`).join("")}</tr></thead><tbody>`;
+    sorted.forEach(sl=>{
+      const c=course(sl.course);
+      h+=`<tr><td class="lbl"><span class="dot" style="--c:${esc(c.color)}"></span><span dir="auto">${esc(c.name)}</span> <span style="color:var(--muted)">· ${DAYS[sl.weekday]} ${esc(sl.start)}${sl.kind&&sl.kind!=="Lecture"?" · "+esc(sl.kind):""}</span></td>`;
+      for(let i=0;i<s.weeks;i++){
+        const d=addDays(weekStart(s,i),sl.weekday), k=skey(sl,d), off=breakFor(s,d), seen=!!S.seen[k], note=S.notes[k];
+        const cls=off?"off":(seen?"seen":(note?"half":(d>t?"future":"missed")));
+        const tip=`Week ${i+1}, ${fmtDay(d)}${off?" · "+off:""}${note?" · "+note:""}`;
+        h+=`<td><button class="cell ${cls}" ${off?"disabled":`data-seen="${esc(k)}"`} title="${esc(tip)}" aria-label="${esc(tip)}">${seen?I.check:""}</button></td>`;
+      }
+      h+=`</tr>`;
+    });
+    h+=`</tbody></table><div class="legend"><span><i style="background:var(--ok)"></i>Seen</span><span><i style="background:linear-gradient(135deg,var(--ok) 50%,var(--glass-weak) 50%)"></i>Has a note</span><span><i style="border-color:var(--warn)"></i>Not seen yet</span><span><i style="opacity:.45"></i>Upcoming</span><span><i style="border-style:dashed;background:transparent"></i>No class</span></div></div>`;
+  }
+  $("#main").innerHTML=h;
+  $("#jump").value=String(w);
+}
+
+function render(){
+  renderBar(); renderSide();
+  if(S.ui.mode==="tasks") renderTasks(); else renderLectures();
+  save();
+}
+
+/* ---------- modal ---------- */
+let modalEl=null;
+function openModal(html,onMount){
+  closeModal();
+  modalEl=document.createElement("div");modalEl.className="scrim";
+  modalEl.innerHTML=`<div class="modal glass" role="dialog" aria-modal="true">${html}</div>`;
+  modalEl.addEventListener("mousedown",e=>{if(e.target===modalEl) closeModal()});
+  document.body.appendChild(modalEl);
+  const m=modalEl.querySelector(".modal");
+  onMount&&onMount(m);
+  const f=m.querySelector("input,select,textarea,button"); f&&f.focus();
+  return m;
+}
+function closeModal(){if(modalEl){modalEl.remove();modalEl=null}}
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ if(modalEl) closeModal(); else hideMenu(); }
+  if(!modalEl&&S.ui.mode==="lectures"&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){
+    if(e.key==="ArrowLeft") moveWeek(-1); if(e.key==="ArrowRight") moveWeek(1);
+  }
+});
+function twoStep(btn,label,fn){
+  btn.addEventListener("click",()=>{
+    if(btn.classList.contains("armed")){fn();return}
+    btn.classList.add("armed");btn.textContent=label;
+    setTimeout(()=>{btn.classList.remove("armed");btn.textContent=btn.dataset.orig},4000);
+  });
+  btn.dataset.orig=btn.textContent;
+}
+const courseOptions=sel=>`<option value="">No course</option>`+S.courses.filter(c=>!c.archived||c.id===sel).map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""}>${esc(c.name)}</option>`).join("");
+
+/* ---------- task editor ---------- */
+function editTask(id){
+  const t=id?S.tasks.find(x=>x.id===id):{id:null,title:"",course:S.ui.course!=="all"?S.ui.course:"",due:"",notes:"",link:"",tentative:false,done:false};
+  const d=t.due?new Date(t.due):null;
+  openModal(`<h2>${id?"Edit task":"New task"}</h2>
+    <div class="field"><label for="tTitle">Title</label><input id="tTitle" class="inp" dir="auto" value="${esc(t.title)}" placeholder="Problem set 3"></div>
+    <div class="field"><label for="tCourse">Course</label><select id="tCourse" class="inp">${courseOptions(t.course)}</select></div>
+    <div class="row"><div class="field"><label for="tDate">Due date</label><input id="tDate" type="date" class="inp" value="${d?iso(d):""}"></div>
+    <div class="field"><label for="tTime">Time</label><input id="tTime" type="time" class="inp" value="${d?pad(d.getHours())+":"+pad(d.getMinutes()):"23:59"}"></div></div>
+    <label class="chk" style="margin-bottom:12px"><input type="checkbox" id="tTent" ${t.tentative?"checked":""}> The date is an estimate</label>
+    <div class="field"><label for="tLink">Link (Moodle page)</label><input id="tLink" class="inp" type="url" value="${esc(t.link)}" placeholder="https://moodle…"></div>
+    <div class="field"><label for="tNotes">Notes</label><textarea id="tNotes" class="inp" dir="auto">${esc(t.notes)}</textarea></div>
+    <div class="foot">${id?`<button class="pill danger left" id="tDel">Delete</button>`:""}<button class="pill" id="tCancel">Cancel</button><button class="pill primary" id="tSave">Save</button></div>`,
+  m=>{
+    m.querySelector("#tCancel").onclick=closeModal;
+    if(id) twoStep(m.querySelector("#tDel"),"Tap again to delete",()=>{S.tasks=S.tasks.filter(x=>x.id!==id);closeModal();render();toast("Task deleted")});
+    m.querySelector("#tSave").onclick=()=>{
+      const title=m.querySelector("#tTitle").value.trim(); if(!title){m.querySelector("#tTitle").focus();return}
+      const ds=m.querySelector("#tDate").value, ts=m.querySelector("#tTime").value||"23:59";
+      let due=""; if(ds){const x=parseISO(ds);const [hh,mm]=ts.split(":").map(Number);x.setHours(hh,mm,0,0);due=x.toISOString()}
+      const v={title,course:m.querySelector("#tCourse").value,due,tentative:m.querySelector("#tTent").checked,link:m.querySelector("#tLink").value.trim(),notes:m.querySelector("#tNotes").value.trim()};
+      if(id) Object.assign(t,v); else S.tasks.push(Object.assign({id:uid(),done:false},v));
+      closeModal(); render(); toast(id?"Task saved":"Task added");
+    };
+  });
+}
+
+/* ---------- course editor ---------- */
+function editCourse(id){
+  const c=id?course(id):{id:null,name:"",color:COLORS[S.courses.length%COLORS.length].c,semester:S.activeSemester,archived:false};
+  let color=c.color;
+  let slots=id?S.slots.filter(x=>x.course===id).map(x=>Object.assign({},x)):[];
+  const slotRow=(sl,i)=>`<div class="sl" data-i="${i}">
+      <select class="inp" data-f="weekday" aria-label="Day">${DAYS_LONG.map((d,j)=>`<option value="${j}" ${+sl.weekday===j?"selected":""}>${d}</option>`).join("")}</select>
+      <input class="inp" type="time" data-f="start" value="${esc(sl.start)}" aria-label="Start">
+      <input class="inp" type="time" data-f="end" value="${esc(sl.end)}" aria-label="End">
+      <select class="inp" data-f="kind" aria-label="Type">${["Lecture","Tutorial","Lab","Seminar"].map(k=>`<option ${sl.kind===k?"selected":""}>${k}</option>`).join("")}</select>
+      <input class="inp wide" data-f="room" dir="auto" value="${esc(sl.room||"")}" placeholder="Room" aria-label="Room">
+      <button class="icon-btn" data-rm="${i}" aria-label="Remove this time">${I.x}</button></div>`;
+  const m=openModal(`<h2>${id?"Edit course":"New course"}</h2>
+    <div class="field"><label for="cName">Name</label><input id="cName" class="inp" dir="auto" value="${esc(c.name)}" placeholder="Classical Mechanics"></div>
+    <div class="row"><div class="field"><label for="cSem">Semester</label><select id="cSem" class="inp">${S.semesters.map(s=>`<option value="${esc(s.id)}" ${s.id===c.semester?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div>
+    <div class="field" style="justify-content:flex-end"><label class="chk"><input type="checkbox" id="cArch" ${c.archived?"checked":""}> Archived</label></div></div>
+    <div class="field"><span class="lab">Color</span><div class="swatches" id="cSw">${COLORS.map(x=>`<button class="sw" style="--c:${x.c}" data-c="${x.c}" aria-label="${x.n}" aria-pressed="${x.c===color}"></button>`).join("")}</div></div>
+    <div class="field"><span class="lab">Weekly lectures and tutorials</span><div id="cSlots"></div><button class="pill" id="cAddSlot" style="align-self:flex-start">+ Add a weekly time</button></div>
+    <div class="foot">${id?`<button class="pill danger left" id="cDel">Delete course</button>`:""}<button class="pill" id="cCancel">Cancel</button><button class="pill primary" id="cSave">Save</button></div>`);
+  const box=m.querySelector("#cSlots");
+  const draw=()=>{box.innerHTML=slots.map(slotRow).join("")||`<p class="hint" style="margin:0 0 6px">None yet. Add the times this course meets each week.</p>`};
+  draw();
+  box.addEventListener("input",e=>{const r=e.target.closest(".sl");if(!r)return;const f=e.target.dataset.f;slots[+r.dataset.i][f]=f==="weekday"?+e.target.value:e.target.value});
+  box.addEventListener("change",e=>{const r=e.target.closest(".sl");if(!r)return;const f=e.target.dataset.f;slots[+r.dataset.i][f]=f==="weekday"?+e.target.value:e.target.value});
+  box.addEventListener("click",e=>{const b=e.target.closest("[data-rm]");if(b){slots.splice(+b.dataset.rm,1);draw()}});
+  m.querySelector("#cAddSlot").onclick=()=>{const last=slots[slots.length-1];slots.push({id:uid(),course:id,weekday:last?last.weekday:0,start:"10:00",end:"11:45",kind:"Lecture",room:""});draw()};
+  m.querySelector("#cSw").addEventListener("click",e=>{const b=e.target.closest(".sw");if(!b)return;color=b.dataset.c;m.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  m.querySelector("#cCancel").onclick=closeModal;
+  if(id) twoStep(m.querySelector("#cDel"),"Also deletes its tasks. Tap again",()=>{
+    S.courses=S.courses.filter(x=>x.id!==id);S.tasks=S.tasks.filter(t=>t.course!==id);S.slots=S.slots.filter(x=>x.course!==id);
+    if(S.ui.course===id)S.ui.course="all";closeModal();render();toast("Course deleted")});
+  m.querySelector("#cSave").onclick=()=>{
+    const name=m.querySelector("#cName").value.trim(); if(!name){m.querySelector("#cName").focus();return}
+    const v={name,color,semester:m.querySelector("#cSem").value,archived:m.querySelector("#cArch").checked};
+    let cid=id; if(id) Object.assign(c,v); else {cid=uid();S.courses.push(Object.assign({id:cid},v))}
+    S.slots=S.slots.filter(x=>x.course!==cid).concat(slots.filter(x=>x.start&&x.end).map(x=>Object.assign(x,{course:cid,id:x.id||uid()})));
+    if(v.archived&&S.ui.course===cid) S.ui.course="all";
+    closeModal();render();toast(id?"Course saved":"Course added");
+  };
+}
+
+/* ---------- semesters ---------- */
+function editSemesters(){
+  let sems=S.semesters.map(s=>Object.assign({},s,{breaks:(s.breaks||[]).map(b=>Object.assign({},b))}));
+  const m=openModal(`<h2>Semesters &amp; holidays</h2><p class="hint">Set when each semester starts and how many weeks it has. Add holidays so those days show “No class” and don’t count as missed.</p><div id="semBox"></div>
+    <button class="pill" id="semAdd">+ Add semester</button>
+    <div class="foot"><button class="pill" id="semCancel">Cancel</button><button class="pill primary" id="semSave">Save</button></div>`);
+  const box=m.querySelector("#semBox");
+  const draw=()=>{box.innerHTML=sems.map((s,i)=>`<div class="glass" style="border-radius:14px;padding:12px;margin-bottom:10px" data-s="${i}">
+      <div class="semrow"><div class="field" style="margin:0"><label>Name</label><input class="inp" data-f="name" value="${esc(s.name)}"></div>
+      <div class="field" style="margin:0"><label>First day</label><input class="inp" type="date" data-f="start" value="${esc(s.start)}"></div>
+      <div class="field" style="margin:0"><label>Weeks</label><input class="inp" type="number" min="1" max="30" data-f="weeks" value="${s.weeks}"></div>
+      <button class="icon-btn" data-rms="${i}" aria-label="Remove semester" ${sems.length<2?"disabled":""}>${I.x}</button></div>
+      <div class="lab" style="margin:10px 0 6px">Holidays (no classes)</div>
+      ${s.breaks.map((b,j)=>`<div class="brk"><input class="inp" type="date" data-b="${j}" data-bf="from" value="${esc(b.from)}" aria-label="From"><input class="inp" type="date" data-b="${j}" data-bf="to" value="${esc(b.to||b.from)}" aria-label="To"><input class="inp" data-b="${j}" data-bf="label" value="${esc(b.label)}" placeholder="Sukkot" aria-label="Name"><button class="icon-btn" data-rmb="${j}" aria-label="Remove holiday">${I.x}</button></div>`).join("")}
+      <div class="row" style="gap:6px"><button class="pill" data-addb="${i}" style="padding:4px 12px;font-size:12px;flex:none">+ Holiday</button><button class="pill" data-ilh="${i}" style="padding:4px 12px;font-size:12px;flex:none">Add Israeli holidays</button></div></div>`).join("")};
+  draw();
+  const upd=e=>{const card=e.target.closest("[data-s]");if(!card)return;const s=sems[+card.dataset.s];
+    if(e.target.dataset.f){s[e.target.dataset.f]=e.target.dataset.f==="weeks"?Math.max(1,Math.min(30,+e.target.value||1)):e.target.value}
+    if(e.target.dataset.bf){s.breaks[+e.target.dataset.b][e.target.dataset.bf]=e.target.value}};
+  box.addEventListener("input",upd);box.addEventListener("change",upd);
+  box.addEventListener("click",e=>{
+    const card=e.target.closest("[data-s]");if(!card)return;const s=sems[+card.dataset.s];
+    const b=e.target.closest("button");if(!b)return;
+    if(b.dataset.addb!=null){s.breaks.push({from:s.start,to:s.start,label:""});draw()}
+    if(b.dataset.ilh!=null){
+      const st=s.start, en=iso(addDays(weekStart(s,s.weeks-1),6)); let n=0;
+      IL_HOLIDAYS.forEach(([f,t,l])=>{ if(t>=st&&f<=en&&!s.breaks.some(x=>x.from===f&&x.label===l)){s.breaks.push({from:f,to:t,label:l});n++} });
+      s.breaks.sort((a,b)=>a.from.localeCompare(b.from)); draw(); toast(n?`Added ${n} holiday${n===1?"":"s"}. Remove any your university doesn’t take off.`:"No Israeli holidays fall in this semester.");
+    }
+    if(b.dataset.rmb!=null){s.breaks.splice(+b.dataset.rmb,1);draw()}
+    if(b.dataset.rms!=null&&sems.length>1){sems.splice(+b.dataset.rms,1);draw()}
+  });
+  m.querySelector("#semAdd").onclick=()=>{sems.push({id:uid(),name:"Semester B",start:iso(sundayOf(today())),weeks:13,breaks:[]});draw()};
+  m.querySelector("#semCancel").onclick=closeModal;
+  m.querySelector("#semSave").onclick=()=>{
+    S.semesters=sems.filter(s=>s.start);
+    if(!S.semesters.find(s=>s.id===S.activeSemester)) S.activeSemester=S.semesters[0]&&S.semesters[0].id;
+    S.courses.forEach(c=>{if(c.semester&&!S.semesters.find(s=>s.id===c.semester)) c.semester=S.activeSemester});
+    S.ui.week=null;closeModal();render();toast("Semesters saved");
+  };
+}
+
+/* ---------- Moodle .ics import ---------- */
+function unescapeIcs(v){return v.replace(/\\n/gi,"\n").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\")}
+function parseIcsDate(val,params){
+  if(!val) return null;
+  const m=val.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/); if(!m) return null;
+  const [,y,mo,d,h,mi,se,z]=m;
+  if(!h) return new Date(+y,+mo-1,+d,23,59);
+  if(z) return new Date(Date.UTC(+y,+mo-1,+d,+h,+mi,+(se||0)));
+  return new Date(+y,+mo-1,+d,+h,+mi,+(se||0));
+}
+function parseIcs(text){
+  const lines=text.replace(/\r\n/g,"\n").replace(/\n[ \t]/g,"").split("\n");
+  const out=[]; let ev=null;
+  for(const line of lines){
+    if(line==="BEGIN:VEVENT"){ev={};continue}
+    if(line==="END:VEVENT"){if(ev)out.push(ev);ev=null;continue}
+    if(!ev) continue;
+    const i=line.indexOf(":"); if(i<0) continue;
+    const head=line.slice(0,i), val=line.slice(i+1), [name,...ps]=head.split(";");
+    const key=name.toUpperCase();
+    if(key==="DTSTART"||key==="DTEND") ev[key]=parseIcsDate(val,ps);
+    else ev[key]=unescapeIcs(val);
+  }
+  return out;
+}
+function cleanTitle(s){return s.replace(/\s+(is due|should be completed|closes|is due to be graded|due)$/i,"").trim()}
+function importIcs(text,opts){
+  opts=opts||{};
+  const evs=parseIcs(text);
+  if(!evs.length) throw new Error(opts.silent?"The calendar link returned no events. If the academic year changed, get a new link from Moodle.":"No calendar events were found in this file. Make sure it’s the .ics file your Moodle (or other system) exported.");
+  if(S.isExample){const fresh=emptyState(); fresh.semesters=S.semesters.map(s=>Object.assign({},s,{breaks:[]})); fresh.activeSemester=S.activeSemester; fresh.ui=S.ui; fresh.cal=S.cal; S=fresh;}
+  let added=0,updated=0,newCourses=0,skipped=0;
+  evs.forEach(ev=>{
+    const summary=ev.SUMMARY||"Untitled";
+    if(/\bopens?$/i.test(summary)||/ - opens\b/i.test(summary)){skipped++;return}
+    const catName=(ev.CATEGORIES||"").split(",")[0].trim();
+    let cid="";
+    if(catName){
+      let c=S.courses.find(c=>c.name.toLowerCase()===catName.toLowerCase()||(c.moodle&&c.moodle.toLowerCase()===catName.toLowerCase()));
+      if(!c){c={id:uid(),name:catName,moodle:catName,color:COLORS[S.courses.length%COLORS.length].c,semester:S.activeSemester,archived:false};S.courses.push(c);newCourses++}
+      cid=c.id;
+    }
+    const due=ev.DTSTART||ev.DTEND;
+    const desc=(ev.DESCRIPTION||"").trim();
+    const link=ev.URL||((desc.match(/https?:\/\/\S+/)||[])[0]||"");
+    const u=ev.UID||(summary+"|"+(due?due.toISOString():""));
+    const existing=S.tasks.find(t=>t.uid===u);
+    const v={title:cleanTitle(summary),course:cid,due:due?due.toISOString():"",notes:desc.replace(/https?:\/\/\S+/g,"").trim().slice(0,600),link,tentative:false};
+    if(existing){Object.assign(existing,v);updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
+  });
+  S.isExample=false;
+  if(!opts.silent){S.ui.course="all"; S.ui.mode="tasks";}
+  render();
+  return {added,updated,newCourses,skipped};
+}
+const summarize=x=>`${x.added} new task${x.added===1?"":"s"}${x.updated?`, ${x.updated} updated`:""}${x.newCourses?`, ${x.newCourses} new course${x.newCourses===1?"":"s"}`:""}`;
+async function fetchCalendar(url){
+  if(IS_DESKTOP) return await window.__TAURI__.core.invoke("fetch_calendar",{url});
+  const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); return await r.text();
+}
+let syncing=false;
+async function syncNow(){
+  if(!S.cal.url||syncing) return null;
+  syncing=true; updateSyncLabel();
+  try{
+    const text=await fetchCalendar(S.cal.url);
+    if(!/BEGIN:VCALENDAR/.test(text)) throw new Error("That link didn’t return a calendar. Use the link from “Get calendar URL”, not the Moodle page address.");
+    const x=importIcs(text,{silent:true});
+    S.cal.lastSync=new Date().toISOString(); S.cal.lastResult=summarize(x); S.cal.error="";
+    return x;
+  }catch(e){
+    const msg=String(e&&e.message||e);
+    S.cal.error=IS_DESKTOP?(/40[13]/.test(msg)?"Your university refused the link. It may have expired; get a new one from Moodle.":msg):"Browsers can’t read calendar links directly. Use the Taskal desktop app for automatic sync, or import the calendar file instead.";
+    throw new Error(S.cal.error);
+  }finally{syncing=false; updateSyncLabel(); render();}
+}
+function updateSyncLabel(){
+  const el=$("#syncLabel"); if(!el) return;
+  el.textContent=syncing?"Syncing…":(S.cal.url?(S.cal.lastSync?"Synced "+relShort(new Date(S.cal.lastSync)):"Calendar"):"Connect calendar");
+}
+function relShort(d){const m=Math.round((Date.now()-d)/6e4);if(m<1)return"just now";if(m<60)return m+" min ago";const h=Math.round(m/60);if(h<24)return h+" hr ago";return Math.round(h/24)+" d ago"}
+function autoSync(){ if(IS_DESKTOP&&S.cal.url&&(!S.cal.lastSync||Date.now()-Date.parse(S.cal.lastSync)>3*36e5)) syncNow().catch(()=>{}); }
+
+function openImport(){
+  const m=openModal(`<h2>Connect your university calendar</h2>
+    <p class="hint">Taskal reads the deadlines your university’s course system publishes as a calendar, then keeps them up to date. Nothing is sent anywhere except to your university.</p>
+    <div class="field"><label for="calUrl">Calendar link</label><input id="calUrl" class="inp" type="url" placeholder="https://moodle.your-university.ac.il/…/calendar/export_execute.php?…" value="${esc(S.cal.url)}"></div>
+    ${IS_DESKTOP?`<p class="hint" style="margin-top:-4px">Taskal checks this link when it opens and every few hours. The link works like a password to your calendar; it stays on this computer.</p>`
+      :`<p class="hint" style="margin-top:-4px"><b>Automatic sync needs the <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app for Windows or Mac</a>.</b> Browsers block websites from reading calendar links. In the browser, use the calendar file option below.</p>`}
+    <div class="row" style="align-items:center;margin-bottom:6px"><button class="pill primary" id="calSave" style="flex:none">${IS_DESKTOP?"Save and sync now":"Save link"}</button>${S.cal.url?`<button class="pill danger" id="calRemove" style="flex:none">Remove link</button>`:""}<span class="hint" id="calStatus" style="margin:0">${S.cal.lastSync?`Last synced ${esc(relShort(new Date(S.cal.lastSync)))}: ${esc(S.cal.lastResult)}`:""}</span></div>
+    <div id="res"></div>
+    <details style="margin:12px 0"><summary><b>How do I find my calendar link?</b></summary>
+      <p class="hint" style="margin-top:8px"><b>Moodle</b> (Hebrew U, Tel Aviv, Technion, Bar-Ilan, Ben-Gurion, Haifa, Ariel, Reichman and most others):</p>
+      <ol class="steps"><li>Open <b>Calendar</b> from the Moodle menu or dashboard.</li>
+        <li>Click <b>Import or export calendars</b>, then <b>Export calendar</b>.</li>
+        <li>Choose <b>All courses</b> and <b>Recent and next 60 days</b>.</li>
+        <li>Click <b>Get calendar URL</b> and copy the link.</li></ol>
+      <p class="hint">If there’s no Export option, your university turned it off. Use <b>Export</b> there to download a file and import it below.<br><b>Canvas:</b> Calendar → <b>Calendar Feed</b>. <b>Other systems:</b> look for “Export”, “Subscribe” or “iCal”.<br>Many universities open a new Moodle site every year, so you may need a new link each October.</p>
+    </details>
+    <div class="lab" style="margin:6px 0">Or import a calendar file (.ics)</div>
+    <div class="drop" id="drop">Drop the .ics file here, or <button class="pill" id="pick" style="margin-left:4px">choose a file</button></div>
+    <div class="foot"><button class="pill" id="iClose">Close</button></div>`);
+  const drop=m.querySelector("#drop"), res=m.querySelector("#res");
+  m.querySelector("#calSave").onclick=async()=>{
+    const url=m.querySelector("#calUrl").value.trim();
+    if(!/^https?:\/\//i.test(url)){res.innerHTML=`<div class="result err">Paste the full link, starting with https://</div>`;return}
+    S.cal.url=url; S.cal.linkYear=academicYear(today()); S.cal.error=""; save();
+    if(!IS_DESKTOP){res.innerHTML=`<div class="result">Link saved. It will sync automatically when you open Taskal in the desktop app.</div>`;render();return}
+    res.innerHTML=`<div class="result">Syncing…</div>`;
+    try{const x=await syncNow(); res.innerHTML=`<div class="result"><b>Synced.</b> ${esc(summarize(x))}.</div>`}
+    catch(e){res.innerHTML=`<div class="result err">${esc(e.message)}</div>`}
+  };
+  const rm=m.querySelector("#calRemove"); if(rm) rm.onclick=()=>{S.cal={url:"",lastSync:null,lastResult:"",linkYear:null,error:""};closeModal();render();updateSyncLabel();toast("Calendar link removed")};
+  const handle=file=>{
+    if(!file) return;
+    const r=new FileReader();
+    r.onload=()=>{try{const x=importIcs(String(r.result));
+        res.innerHTML=`<div class="result"><b>Imported.</b> ${esc(summarize(x))}.</div>`;
+      }catch(err){res.innerHTML=`<div class="result err">${esc(err.message)}</div>`}};
+    r.onerror=()=>{res.innerHTML=`<div class="result err">That file couldn’t be read. Try exporting it again.</div>`};
+    r.readAsText(file);
+  };
+  m.querySelector("#pick").onclick=()=>{const f=$("#fileIcs");f.value="";f.onchange=()=>handle(f.files[0]);f.click()};
+  ["dragenter","dragover"].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add("over")}));
+  ["dragleave","drop"].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove("over")}));
+  drop.addEventListener("drop",e=>handle(e.dataTransfer.files[0]));
+  m.querySelector("#iClose").onclick=closeModal;
+}
+
+/* ---------- note editor ---------- */
+function editNote(k){
+  const [sid,date]=k.split("@"); const sl=S.slots.find(x=>x.id===sid); const c=course(sl.course);
+  openModal(`<h2>Note</h2><p class="hint" dir="auto">${esc(c.name)} · ${DAYS_LONG[sl.weekday]} ${fmtDay(parseISO(date))} · ${esc(sl.start)}–${esc(sl.end)}</p>
+    <div class="field"><label for="nText">Note</label><textarea id="nText" class="inp" dir="auto" placeholder="Seen till 00:57">${esc(S.notes[k]||"")}</textarea></div>
+    <label class="chk"><input type="checkbox" id="nSeen" ${S.seen[k]?"checked":""}> Seen</label>
+    <div class="foot">${S.notes[k]?`<button class="pill danger left" id="nDel">Remove note</button>`:""}<button class="pill" id="nCancel">Cancel</button><button class="pill primary" id="nSave">Save</button></div>`,
+  m=>{
+    const ta=m.querySelector("#nText"); setTimeout(()=>ta.focus(),0);
+    m.querySelector("#nCancel").onclick=closeModal;
+    const d=m.querySelector("#nDel"); if(d) d.onclick=()=>{delete S.notes[k];closeModal();render()};
+    m.querySelector("#nSave").onclick=()=>{const v=ta.value.trim(); if(v) S.notes[k]=v; else delete S.notes[k];
+      if(m.querySelector("#nSeen").checked) S.seen[k]=true; else delete S.seen[k]; closeModal();render()};
+  });
+}
+
+/* ---------- backup ---------- */
+async function backup(){
+  const data=JSON.stringify(Object.assign({app:"Taskal"},S),null,1);
+  const name="taskal-backup-"+iso(today())+".json";
+  let dl=null; try{dl=window.claude&&await window.claude.use("downloads")}catch(e){}
+  if(dl){try{await dl.save({filename:name,data});toast("Backup saved");return}catch(e){if(e&&e.code==="declined")return}}
+  if(!window.claude){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast("Backup saved to your Downloads folder");return}catch(e){}}
+  try{await navigator.clipboard.writeText(data);toast("Backup copied to the clipboard. Paste it into a text file to keep it.")}
+  catch(e){openModal(`<h2>Your backup</h2><p class="hint">Copy everything below into a text file named ${esc(name)}.</p><textarea class="inp" style="min-height:240px" readonly>${esc(data)}</textarea><div class="foot"><button class="pill primary" id="bOk">Done</button></div>`,m=>{m.querySelector("textarea").select();m.querySelector("#bOk").onclick=closeModal})}
+}
+function restore(){
+  const f=$("#fileJson");f.value="";
+  f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();
+    r.onload=()=>{try{const v=JSON.parse(String(r.result));if(!v.courses||!v.tasks)throw 0;delete v.app;S=normalize(v);S.isExample=false;render();toast("Backup restored")}
+      catch(e){toast("That file isn’t a Taskal backup")}};r.readAsText(file)};
+  f.click();
+}
+
+/* ---------- events ---------- */
+function moveWeek(n){const s=sem();if(!s)return;S.ui.week=Math.min(Math.max((S.ui.week??currentWeek(s))+n,0),s.weeks-1);render()}
+function hideMenu(){$("#menu").hidden=true;$("#moreBtn").setAttribute("aria-expanded","false")}
+function act(a){
+  hideMenu();
+  if(a==="import") openImport();
+  else if(a==="addtask") editTask(null);
+  else if(a==="newcourse") editCourse(null);
+  else if(a==="semesters") editSemesters();
+  else if(a==="backup") backup();
+  else if(a==="restore") restore();
+  else if(a==="keepyear"){S.cal.linkYear=academicYear(today());render()}
+  else if(a==="togglearch"){S.ui.showArchived=!S.ui.showArchived;render()}
+  else if(a==="toggledone"){S.ui.showDone=!S.ui.showDone;render()}
+  else if(a==="thisweek"){S.ui.week=null;render()}
+  else if(a==="editfirst"){const c=activeCourses().find(c=>S.ui.course==="all"||c.id===S.ui.course);c&&editCourse(c.id)}
+  else if(a==="example"){confirmReplace("Load the example semester? This replaces everything you have in Taskal.",()=>{const ui=S.ui;S=example();S.ui=Object.assign(S.ui,{mode:ui.mode});render()})}
+  else if(a==="empty"){
+    if(S.isExample){S=emptyState();render();toast("Started fresh. Connect your calendar or add a course.")}
+    else confirmReplace("Start empty? This removes all your courses, tasks and lecture marks.",()=>{S=emptyState();render()});
+  }
+}
+function confirmReplace(msg,fn){
+  openModal(`<h2>Are you sure?</h2><p>${esc(msg)} Save a backup first if you might want it back.</p><div class="foot"><button class="pill" id="xNo">Cancel</button><button class="pill danger armed" id="xYes">Replace</button></div>`,
+    m=>{m.querySelector("#xNo").onclick=closeModal;m.querySelector("#xYes").onclick=()=>{closeModal();fn()}});
+}
+$("#modeTasks").onclick=()=>{S.ui.mode="tasks";render()};
+$("#modeLect").onclick=()=>{S.ui.mode="lectures";render()};
+$("#semSel").onchange=e=>{S.activeSemester=e.target.value;S.ui.week=null;S.ui.course="all";render()};
+$("#importBtn").onclick=openImport;
+$("#addBtn").onclick=()=>S.ui.mode==="tasks"?editTask(null):editCourse(null);
+$("#moreBtn").onclick=e=>{e.stopPropagation();const mn=$("#menu");mn.hidden=!mn.hidden;$("#moreBtn").setAttribute("aria-expanded",String(!mn.hidden))};
+$("#menu").addEventListener("click",e=>{const b=e.target.closest("[data-act]");b&&act(b.dataset.act)});
+document.addEventListener("click",e=>{if(!e.target.closest(".menu-wrap"))hideMenu()});
+$("#side").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.act) return act(b.dataset.act);
+  if(b.dataset.editcourse) return editCourse(b.dataset.editcourse);
+  if(b.dataset.course){ if(S.ui.course===b.dataset.course&&b.dataset.course!=="all"){editCourse(b.dataset.course);return} S.ui.course=b.dataset.course;render()}
+});
+$("#side").addEventListener("dblclick",e=>{const b=e.target.closest("[data-course]");if(b&&b.dataset.course!=="all")editCourse(b.dataset.course)});
+$("#main").addEventListener("click",e=>{
+  const nb=e.target.closest("[data-note]"); if(nb){e.stopPropagation();editNote(nb.dataset.note);return}
+  const b=e.target.closest("[data-act],[data-toggle],[data-edittask],[data-week],[data-lv],[data-seen]");if(!b)return;
+  if(b.dataset.act) return act(b.dataset.act);
+  if(b.dataset.toggle){const t=S.tasks.find(x=>x.id===b.dataset.toggle);t.done=!t.done;render();return}
+  if(b.dataset.edittask) return editTask(b.dataset.edittask);
+  if(b.dataset.week) return moveWeek(+b.dataset.week);
+  if(b.dataset.lv){S.ui.lecView=b.dataset.lv;render();return}
+  if(b.dataset.seen){const k=b.dataset.seen;if(S.seen[k])delete S.seen[k];else S.seen[k]=true;render();
+    const el=document.querySelector(`[data-seen="${CSS.escape(k)}"]`);el&&el.focus();}
+});
+$("#main").addEventListener("keydown",e=>{const b=e.target.closest(".sess[data-seen]");if(b&&(e.key===" "||e.key==="Enter")&&e.target===b){e.preventDefault();b.click()}});
+$("#main").addEventListener("change",e=>{if(e.target.id==="jump"){S.ui.week=+e.target.value;render()}});
+
+document.addEventListener("click",e=>{
+  const a=e.target.closest('a[target="_blank"]'); if(!a||!IS_DESKTOP) return;
+  e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
+});
+S=load();
+render();
+updateSyncLabel();
+autoSync();
+setInterval(()=>{autoSync();updateSyncLabel()},10*60*1000);
+})();
+</script>
+</body>
+</html>
