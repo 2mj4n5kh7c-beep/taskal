@@ -205,6 +205,33 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .cal-more{border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:600;text-align:left;padding:0 6px}
 @media (max-width:820px){.cal-d{min-height:64px;padding:3px}.cal-t{padding:2px 3px}.cal-t .tt{display:none}.cal-n i{display:none}.cal-h div{padding:2px;text-align:center}}
 
+
+/* ---- toolbar hierarchy ---- */
+.bar-in{background:var(--glass-strong);border-color:color-mix(in srgb,var(--accent) 22%,var(--stroke))}
+.bar .sep{width:1px;height:26px;background:var(--hair);flex:none}
+.seg.modes{flex:none;flex-wrap:nowrap;white-space:nowrap;padding:4px;background:color-mix(in srgb,var(--fg) 6%,transparent);border-color:transparent}
+.seg.modes button{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;font-weight:600}
+.seg.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 35%,transparent)}
+.ctx{flex:none;position:relative;display:inline-flex;align-items:center}
+.ctx svg{position:absolute;left:12px;pointer-events:none;color:var(--accent)}
+.ctx select.pill{padding-left:34px;font-weight:600;color:var(--accent);background-color:color-mix(in srgb,var(--accent) 11%,transparent);border-color:color-mix(in srgb,var(--accent) 28%,transparent)}
+#importBtn{background:transparent;color:var(--muted)}
+#importBtn:hover{color:var(--fg);background:var(--glass-weak)}
+/* page-level view switch: underline tabs */
+.viewbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:2px 6px 0;border-bottom:1px solid var(--hair);margin-bottom:2px}
+.viewbar .vt{margin:0 0 8px;font-size:20px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px;min-width:0}
+.viewbar .vt small{font-size:13px;font-weight:500;color:var(--muted)}
+.tabs{display:flex;gap:2px}
+.tabs button{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;padding:6px 12px 9px;font-weight:500;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--fg)}
+.tabs button[aria-pressed="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.week .tabs button{padding:6px 10px}
+/* navigation bars: quieter controls, title leads */
+.calbar,.week{background:var(--glass-weak);box-shadow:none}
+.calbar .icon-btn,.week .icon-btn{background:transparent;border-color:transparent}
+.calbar .icon-btn:hover,.week .icon-btn:not(:disabled):hover{background:var(--glass-strong);border-color:var(--hair)}
+@media (max-width:820px){.bar .sep{display:none}.seg.modes button{padding:6px 12px}.bar-in{padding:8px 10px}.viewbar .vt{font-size:17px}}
+
 /* modal */
 .scrim{position:fixed;inset:0;background:rgba(10,16,26,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:30;display:grid;place-items:center;
   padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -261,11 +288,13 @@ ol.steps li{margin-bottom:4px}
       <img class="brand-mark" src="icon.svg" alt="" aria-hidden="true">
       Taskal
     </div>
-    <div class="seg" role="group" aria-label="Mode">
-      <button id="modeTasks" type="button">Tasks</button>
-      <button id="modeLect" type="button">Lectures</button>
+    <span class="sep" aria-hidden="true"></span>
+    <div class="seg modes" role="group" aria-label="Mode">
+      <button id="modeTasks" type="button"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5l1.5 1.5L6 3.5M2 11l1.5 1.5L6 10M8.5 5h5.5M8.5 11.5h5.5"/></svg>Tasks</button>
+      <button id="modeLect" type="button"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 1.5 6 8 9l6.5-3z"/><path d="M4 7.3v3.4c2.2 1.6 5.8 1.6 8 0V7.3"/></svg>Lectures</button>
     </div>
-    <select id="semSel" class="pill" aria-label="Semester"></select>
+    <label class="ctx"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><select id="semSel" class="pill" aria-label="Semester"></select></label>
+    <span class="sep" aria-hidden="true"></span>
     <button id="importBtn" class="pill" type="button">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M2.5 13.5h11"/></svg>
       <span id="syncLabel">Connect calendar</span></button>
@@ -437,6 +466,8 @@ const I={
   clock:'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5" stroke-linecap="round"/></svg>',
   left:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>',
   right:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',
+  list:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>',
+  grid:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M6 6.5v7.5M10 6.5v7.5M2 10.2h12"/></svg>',
   x:'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'
 };
 
@@ -498,7 +529,8 @@ function renderTasks(){
   ];
   const done=all.filter(t=>t.done).sort((a,b)=>Date.parse(b.due||0)-Date.parse(a.due||0));
   let h=banner();
-  h+=`<div class="viewbar"><div class="seg" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">Calendar</button></div></div>`;
+  {const oc=open.length, cn=S.ui.course==="all"?"All courses":((course(S.ui.course)||{}).name||"Tasks");
+  h+=`<div class="viewbar"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;}
   if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); return; }
   if(!all.length){
     h+=`<div class="empty glass"><strong>No tasks here yet</strong>Connect your university calendar (Moodle and similar), or add a task with the + Task button.<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="pill primary" data-act="import">Connect calendar</button><button class="pill" data-act="addtask">+ Task</button></div></div>`;
@@ -566,7 +598,7 @@ function renderLectures(){
       <div class="range tnum">${ws.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"})} – ${we.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</div></div>
     <select class="pill" id="jump" aria-label="Jump to week">${opts}</select>
     ${isCur?"":`<button class="pill primary" data-act="thisweek">This week</button>`}
-    <div class="seg" role="group" aria-label="Lectures view"><button data-lv="week" aria-pressed="${S.ui.lecView==="week"}">Week</button><button data-lv="all" aria-pressed="${S.ui.lecView==="all"}">All weeks</button></div>
+    <div class="tabs" role="group" aria-label="Lectures view"><button data-lv="week" aria-pressed="${S.ui.lecView==="week"}">${I.grid}Week</button><button data-lv="all" aria-pressed="${S.ui.lecView==="all"}">${I.list}All weeks</button></div>
     <button class="icon-btn lg" data-week="1" aria-label="Next week" ${w>=s.weeks-1?"disabled":""}>${I.right}</button>
   </section>`;
   if(courses.length){
