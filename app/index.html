@@ -191,10 +191,12 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .viewbar{display:flex;justify-content:flex-end}
 .calbar{border-radius:var(--r-lg);padding:10px 14px;display:flex;align-items:center;gap:12px}
 .calbar h2{margin:0;font-size:22px;letter-spacing:-.01em;flex:1;text-align:center;text-wrap:balance}
-.cal{border-radius:var(--r-lg);padding:8px;overflow:hidden}
+.cal{border-radius:var(--r-lg);padding:8px;overflow:hidden;display:flex;flex-direction:column;gap:4px}
+.cal-g{flex:1;grid-auto-rows:minmax(0,1fr)}
+.cal[style*="height"] .cal-d{min-height:0}
 .cal-h,.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .cal-h div{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:4px 6px}
-.cal-d{min-height:104px;border-radius:12px;padding:5px;background:var(--glass-weak);border:1px solid var(--hair);display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer}
+.cal-d{min-height:96px;overflow:hidden;border-radius:12px;padding:5px;background:var(--glass-weak);border:1px solid var(--hair);display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer}
 .cal-d:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
 .cal-d.out{opacity:.45}
 .cal-d.today{background:color-mix(in srgb,var(--accent) 16%,var(--glass-strong));border-color:var(--accent)}
@@ -541,7 +543,7 @@ function renderTasks(){
   let h=banner();
   {const oc=open.length, cn=S.ui.course==="all"?"All courses":((course(S.ui.course)||{}).name||"Tasks");
   h+=`<div class="viewbar"><div class="vh"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><button class="pill primary sm" data-act="addtask">+ Task</button></div><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;}
-  if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); return; }
+  if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); fitCal(); return; }
   if(!all.length){
     h+=`<div class="empty glass"><strong>No tasks here yet</strong>Connect your university calendar (Moodle and similar), or add a task with the + Task button.<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="pill primary" data-act="import">Connect calendar</button><button class="pill" data-act="addtask">+ Task</button></div></div>`;
   }
@@ -555,6 +557,21 @@ function renderTasks(){
   }
   $("#main").innerHTML=h;
 }
+let calCap=3;
+/* fit the month grid to the window on wide screens; show as many tasks per day as fit */
+function fitCal(){
+  const c=document.querySelector(".cal"); if(!c) return;
+  if(innerWidth<=820){c.style.height="";if(calCap!==3){calCap=3;render()}return}
+  const top=c.getBoundingClientRect().top+scrollY;
+  const h=Math.max(430,innerHeight-top-80);
+  c.style.height=h+"px";
+  const rows=c.querySelectorAll(".cal-d").length/7||5;
+  const head=c.querySelector(".cal-h").offsetHeight;
+  const rowH=(h-16-head-4-(rows-1)*4)/rows;
+  const cap=Math.max(1,Math.floor((rowH-12-18)/24));
+  if(cap!==calCap){calCap=cap;render()}
+}
+let fitT=null; addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(fitCal,120)});
 function taskCalendar(all){
   const t=today();
   const [y,mo]=(S.ui.calMonth||(t.getFullYear()+"-"+pad(t.getMonth()+1))).split("-").map(Number);
@@ -570,8 +587,9 @@ function taskCalendar(all){
     const k=iso(d), list=byDay[k]||[], out=d.getMonth()!==mo-1, isT=k===iso(t);
     const off=sem()&&breakFor(sem(),d);
     h+=`<div class="cal-d ${out?"out":""} ${isT?"today":""}" data-newon="${k}" title="${off?esc(off):""}"><div class="cal-n"><span>${d.getDate()}</span>${off?`<i>${esc(off)}</i>`:""}</div>`;
-    list.slice(0,3).forEach(x=>{h+=`<button class="cal-t ${x.done?"done":""} ${(!x.done&&new Date(x.due)<new Date())?"late":""}" style="--c:${esc(colorOf(x.course))}" data-edittask="${esc(x.id)}" title="${esc(x.title)}"><span class="dot"></span><span class="tt" dir="auto">${esc(x.title)}</span></button>`});
-    if(list.length>3) h+=`<button class="cal-more" data-day="${k}">+${list.length-3} more</button>`;
+    const shown=list.length>calCap?Math.max(calCap-1,0):list.length;
+    list.slice(0,shown).forEach(x=>{h+=`<button class="cal-t ${x.done?"done":""} ${(!x.done&&new Date(x.due)<new Date())?"late":""}" style="--c:${esc(colorOf(x.course))}" data-edittask="${esc(x.id)}" title="${esc(x.title)}"><span class="dot"></span><span class="tt" dir="auto">${esc(x.title)}</span></button>`});
+    if(list.length>shown) h+=`<button class="cal-more" data-day="${k}">+${list.length-shown} more</button>`;
     h+=`</div>`;
   }
   return h+`</div></div><p class="hint" style="margin:2px 4px">Click a day to add a task on that date.</p>`;
