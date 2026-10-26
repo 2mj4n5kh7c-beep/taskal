@@ -449,6 +449,34 @@ body{background:var(--bg)!important;background-image:none!important}
 
 /* macOS app: window buttons sit on the navy bar */
 body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
+
+/* lectures time grid */
+.tg{display:flex;flex-direction:column;gap:6px;min-width:0}
+.tg-head,.tg-body{display:grid;grid-template-columns:44px repeat(var(--cols),minmax(0,1fr));gap:0 10px}
+.tg-head .day-h{flex-wrap:wrap;row-gap:2px}
+.offtag{flex-basis:100%;font-style:normal;font-size:11.5px;color:var(--muted);font-weight:400}
+.tg-body{position:relative;min-height:380px}
+.tg-hours{position:relative}
+.tg-hours span{position:absolute;right:4px;transform:translateY(-50%);font-size:11px;color:var(--faint)}
+.tg-hours span:first-child{transform:none}
+.tg-col{position:relative;border-radius:10px;background:color-mix(in srgb,var(--surface) 45%,transparent)}
+.tg-col.today{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.tg-line{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}
+.sess.tg-s{position:absolute;overflow:hidden;padding:6px 8px 6px 11px;display:flex;flex-direction:column;gap:1px;min-height:0}
+.sess.tg-s::before{top:6px;bottom:6px}
+.sess.tg-s:hover{transform:none;z-index:2}
+.sess.tg-s .cn{margin-top:2px;font-size:13.5px;line-height:1.2}
+.sess.tg-s .sub{margin-top:1px}
+.sess.tg-s .nb{width:22px;height:22px}
+.sess.tg-s .ring{width:17px;height:17px}
+
+.sess.tg-s .cn{overflow-wrap:normal;word-break:normal;hyphens:auto}
+.sess.tg-s.sm .sub,.sess.tg-s.sm .note{display:none}
+.sess.tg-s.xs{padding:3px 6px 3px 10px;flex-direction:row;align-items:center;gap:6px}
+.sess.tg-s.xs::before{top:3px;bottom:3px}
+.sess.tg-s.xs .top{order:0;gap:6px}
+.sess.tg-s.xs .time,.sess.tg-s.xs .sub,.sess.tg-s.xs .note,.sess.tg-s.xs .nb{display:none}
+.sess.tg-s.xs .cn{margin:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 </style>
 </head>
 <body>
@@ -740,7 +768,9 @@ function fitCal(){
   const cap=Math.max(1,Math.floor((rowH-12-18)/24));
   if(cap!==calCap){calCap=cap;render()}
 }
-let fitT=null; addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(fitCal,120)});
+let fitT=null; addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(()=>{
+  const wide=innerWidth>820; if(wide!==lastWide){lastWide=wide; if(S.ui.mode==="lectures"){render();return}}
+  fitCal(); fitWeek();},120)});
 function taskCalendar(all){
   const t=today();
   const [y,mo]=(S.ui.calMonth||(t.getFullYear()+"-"+pad(t.getMonth()+1))).split("-").map(Number);
@@ -807,7 +837,10 @@ function renderLectures(){
     h+=`<div class="empty glass"><strong>No lecture times yet</strong>Open a course and add its weekly lectures and tutorials. They repeat every week of the semester.<div style="margin-top:14px"><button class="pill primary" data-act="${courses.length?"editfirst":"newcourse"}">${courses.length?"Add lecture times":"Add a course"}</button></div></div>`;
     $("#main").innerHTML=h; return;
   }
-  if(S.ui.lecView==="week"){
+  if(S.ui.lecView==="week"&&innerWidth>820){
+    h+=timeGrid(s,ws,slots);
+    h+=`<p class="hint" style="margin:2px 4px">Tap a session to mark it seen, live or later. Use the note icon for things like “seen till 00:57”.</p>`;
+  } else if(S.ui.lecView==="week"){
     const used=new Set(slots.map(x=>x.weekday)); let days=[0,1,2,3,4]; if(used.has(5)) days.push(5); if(used.has(6)) days.push(6);
     const t=today();
     h+=`<div class="days" style="--cols:${days.length}">`;
@@ -845,7 +878,56 @@ function renderLectures(){
     h+=`</tbody></table><div class="legend"><span><i style="background:var(--ok)"></i>Seen</span><span><i style="background:linear-gradient(135deg,var(--ok) 50%,var(--glass-weak) 50%)"></i>Has a note</span><span><i style="border-color:var(--warn)"></i>Not seen yet</span><span><i style="opacity:.45"></i>Upcoming</span><span><i style="border-style:dashed;background:transparent"></i>No class</span></div></div>`;
   }
   $("#main").innerHTML=h;
+  fitWeek();
 }
+
+/* week as a time grid that fills the window: sessions sit at their real times */
+const toMin=t=>{const [a,b]=String(t||"0:0").split(":").map(Number);return a*60+(b||0)};
+function timeGrid(s,ws,slots){
+  const used=new Set(slots.map(x=>x.weekday)); let days=[0,1,2,3,4]; if(used.has(5)) days.push(5); if(used.has(6)) days.push(6);
+  const t=today();
+  const lo=Math.floor(Math.min(...slots.map(x=>toMin(x.start)))/60)*60, hi=Math.ceil(Math.max(...slots.map(x=>toMin(x.end)))/60)*60;
+  const span=Math.max(hi-lo,60), pct=m=>((m-lo)/span*100).toFixed(3)+"%";
+  let h=`<div class="tg" style="--cols:${days.length}"><div class="tg-head"><div></div>`;
+  days.forEach(d=>{const date=addDays(ws,d), isToday=iso(date)===iso(t), off=breakFor(s,date);
+    h+=`<div class="day-h ${isToday?"today":""}"><b>${DAYS[d]}${isToday?" · Today":""}</b><span class="tnum">${fmtDay(date)}</span>${off?`<i class="offtag">${esc(off)}</i>`:""}</div>`});
+  h+=`</div><div class="tg-body"><div class="tg-hours">`;
+  for(let m=lo;m<=hi;m+=60) h+=`<span class="tnum" style="top:${pct(m)}">${pad(m/60)}:00</span>`;
+  h+=`</div>`;
+  days.forEach(d=>{
+    const date=addDays(ws,d), off=breakFor(s,date), future=date>t;
+    const list=slots.filter(x=>x.weekday===d).sort((a,b)=>toMin(a.start)-toMin(b.start)||toMin(b.end)-toMin(a.end));
+    // side-by-side lanes for sessions that overlap
+    const lanes=[], place=new Map(); let cluster=[], clusterEnd=-1;
+    const flush=()=>{const n=Math.max(1,...cluster.map(x=>place.get(x).lane+1));cluster.forEach(x=>place.get(x).n=n);cluster=[];lanes.length=0};
+    list.forEach(sl=>{const st=toMin(sl.start), en=toMin(sl.end);
+      if(st>=clusterEnd&&cluster.length) flush();
+      let lane=lanes.findIndex(e=>e<=st); if(lane<0){lane=lanes.length;lanes.push(en)} else lanes[lane]=en;
+      place.set(sl,{lane,n:1}); cluster.push(sl); clusterEnd=Math.max(clusterEnd,en);});
+    if(cluster.length) flush();
+    h+=`<div class="tg-col ${iso(date)===iso(t)?"today":""}">`;
+    for(let m=lo+60;m<hi;m+=60) h+=`<div class="tg-line" style="top:${pct(m)}"></div>`;
+    list.forEach(sl=>{
+      const c=course(sl.course), k=skey(sl,date), seen=!!S.seen[k], note=S.notes[k], pl=place.get(sl);
+      const st=toMin(sl.start), en=toMin(sl.end);
+      h+=`<div class="sess tg-s ${seen?"seen":""} ${future?"future":""} ${off?"off":""}" style="--c:${esc(c.color)};top:${pct(st)};height:calc(${((en-st)/span*100).toFixed(3)}% - 4px);left:calc(${(pl.lane/pl.n*100).toFixed(3)}% + 3px);width:calc(${(100/pl.n).toFixed(3)}% - 6px)" ${off?"":`data-seen="${esc(k)}" role="button" tabindex="0" aria-pressed="${seen}" aria-label="${esc(c.name)} ${DAYS_LONG[d]} ${sl.start}: ${seen?"seen":"not seen"}"`}>
+        <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(sl.start)}–${esc(sl.end)}</span>${off?"":`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
+        <div class="cn" dir="auto">${esc(c.name)}</div>
+        <div class="sub">${sl.kind&&sl.kind!=="Lecture"?`<span class="kind">${esc(sl.kind)}</span>`:""}${sl.room?`<span dir="auto">${esc(sl.room)}</span>`:""}</div>
+        ${note?`<div class="note" dir="auto">${esc(note)}</div>`:""}
+      </div>`;
+    });
+    h+=`</div>`;
+  });
+  return h+`</div></div>`;
+}
+function fitWeek(){
+  const g=document.querySelector(".tg-body"); if(!g) return;
+  const top=g.getBoundingClientRect().top+scrollY;
+  g.style.height=Math.max(380,innerHeight-top-70)+"px";
+  g.querySelectorAll(".tg-s").forEach(el=>{const h=el.offsetHeight;el.classList.toggle("xs",h<58);el.classList.toggle("sm",h>=58&&h<86)});
+}
+let lastWide=innerWidth>820;
 
 function render(){
   const inSetup=!!S.setup;
