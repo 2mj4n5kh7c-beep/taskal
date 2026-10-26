@@ -325,6 +325,97 @@ ol.steps li{margin-bottom:4px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 [hidden]{display:none!important}
+/* ===== calm redesign  ===== */
+:root{
+  --bg:#f3f4f6; --surface:#ffffff; --surface-2:#f7f8fa; --line:#e5e7eb; --line-2:#eef0f3;
+  --fg:#18212d; --muted:#5a6577; --faint:#8b94a3;
+  --accent:#2f6fd6; --accent-fg:#fff; --accent-soft:#e8f0fc;
+  --danger:#c93c2c; --warn:#b26b00; --ok:#1f8a55;
+  --glass:var(--surface); --glass-strong:var(--surface); --glass-weak:var(--surface-2);
+  --stroke:var(--line); --hair:var(--line);
+  --shadow:0 1px 2px rgba(16,24,40,.05);
+  --r-lg:14px; --r-md:12px; --r-sm:9px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141a; --surface:#171d25; --surface-2:#1c232d; --line:#273140; --line-2:#212a36;
+  --fg:#e6ebf2; --muted:#9aa5b5; --faint:#6e7a8a; --accent:#6aa5f0; --accent-fg:#0d1622; --accent-soft:#1d2b40;
+  --glass:var(--surface); --glass-strong:var(--surface); --glass-weak:var(--surface-2); --stroke:var(--line); --hair:var(--line);
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}}
+body{background:var(--bg)!important;background-image:none!important}
+.glass{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid var(--line);box-shadow:var(--shadow)}
+/* top bar: flush, one line */
+.bar{padding:0;margin-bottom:18px;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1400px;margin:0 auto;border-radius:0;border:0!important;box-shadow:none;background:transparent!important;padding:10px 20px}
+.bar .sep{display:none}
+.seg.modes{background:var(--surface-2);border:1px solid var(--line)}
+.seg.modes button{color:var(--muted);font-weight:500}
+.seg.modes button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(16,24,40,.12);font-weight:600}
+.ctx select.pill{background-color:transparent;border-color:var(--line);color:var(--fg);font-weight:500}
+.ctx svg{color:var(--muted)}
+.icon-btn{background:transparent;border-color:transparent}
+.icon-btn:hover{background:var(--surface-2)}
+.pill{background:var(--surface);border-color:var(--line);box-shadow:none}
+.pill.primary{box-shadow:none}
+/* sidebar: plain navigation, no cards */
+.side,.synccard{background:transparent;border:0;box-shadow:none;padding:4px 0}
+.synccard{border-top:1px solid var(--line);border-radius:0;padding-top:14px}
+.side h3,.synccard h3{letter-spacing:.02em;text-transform:none;font-size:12px;color:var(--faint);margin-left:10px}
+.crs{border-radius:9px;padding:7px 10px}
+.crs:hover{background:var(--line-2)}
+.crs[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.crs[aria-current="true"] .count{color:var(--accent)}
+.dot{width:8px;height:8px}
+#importBtn{background:var(--surface);border:1px solid var(--line);color:var(--fg)}
+/* page header */
+.viewbar{border-bottom-color:var(--line)}
+.viewbar .vt{font-size:22px}
+.section-h h2{text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg)}
+.section-h .n{color:var(--faint)}
+/* tasks: white rows, color only as a stripe */
+.list{gap:8px}
+.task{background:var(--surface)!important;border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:12px;padding:12px 14px 12px 14px}
+.task::before{left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0}
+.check{border:2px solid #c3c9d2;margin-left:4px}
+.task .t{font-size:14.5px;text-align:left}
+.task .notes{color:var(--faint)}
+.task .acts a,.task .acts button{border:0;background:transparent;color:var(--faint)}
+.task .acts a:hover,.task .acts button:hover{background:var(--surface-2);color:var(--fg)}
+/* lectures */
+.week,.calbar{background:transparent!important;border:0;box-shadow:none;padding:0 2px}
+.week h1{font-size:22px}
+.chips{gap:6px}
+.chip{background:var(--surface)!important;border:1px solid var(--line);font-weight:500}
+.day-h{background:transparent!important;border:0;border-bottom:2px solid var(--line);border-radius:0;box-shadow:none;padding:4px 4px 8px}
+.day-h.today{border-bottom-color:var(--accent)}
+.day-h.today b{color:var(--accent)}
+.sess{background:var(--surface)!important;border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:12px;padding:10px 10px 10px 14px}
+.sess::before{left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0}
+.sess .cn{text-align:left;font-size:14px}
+.ring{border-color:#c3c9d2}
+.sess:not(.future):not(.seen) .ring{border-color:var(--warn)}
+.kind{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.sess.off{opacity:.45}
+/* calendar */
+.cal{border-radius:14px;background:var(--surface)}
+.cal-d{background:var(--surface);border:0;border-radius:0;box-shadow:inset -1px -1px 0 var(--line-2)}
+.cal-g{gap:0}
+.cal-d.today{background:var(--accent-soft)}
+.cal-t{background:color-mix(in srgb,var(--c) 12%,var(--surface));border-left:3px solid var(--c);border-radius:5px}
+.cal-t.late{box-shadow:none;color:var(--danger)}
+.cal-t.late .tt{color:var(--danger)}
+.banner{background:#fff7e8;border-color:#f1dcb2}
+
+.cal{padding:0}
+.cal-h{padding:8px 0 6px;border-bottom:1px solid var(--line)}
+.cal-h div{padding:2px 10px}
+.cal-d:nth-child(7n){box-shadow:inset 0 -1px 0 var(--line-2)}
+.setup-card{box-shadow:0 1px 3px rgba(16,24,40,.06)}
+.orow,.ogroup{background:var(--surface-2)}
+.modal{background:var(--surface)!important}
+.menu{background:var(--surface)!important;box-shadow:0 8px 24px rgba(16,24,40,.12)}
+.stepper li{background:var(--surface-2)}
+.stepper li.on{background:var(--accent-soft)}
 </style>
 </head>
 <body>
@@ -383,9 +474,9 @@ const KEY="taskal.v1";
 const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const DAYS_LONG=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const COLORS=[
-  {c:"#3b7dd8",n:"Deep blue"},{c:"#5aa2e0",n:"Sky"},{c:"#7f9be6",n:"Periwinkle"},{c:"#3aa7b8",n:"Teal"},
-  {c:"#4caf7a",n:"Green"},{c:"#9cc35a",n:"Lime"},{c:"#e2c23c",n:"Yellow"},{c:"#e0a541",n:"Amber"},
-  {c:"#e07a5f",n:"Coral"},{c:"#c56fb0",n:"Orchid"},{c:"#8a7fd1",n:"Violet"},{c:"#8a96a3",n:"Slate"}
+  {c:"#3f73d6",n:"Blue"},{c:"#2f9aa3",n:"Teal"},{c:"#d06548",n:"Coral"},{c:"#c08a1e",n:"Amber"},
+  {c:"#7c64cf",n:"Violet"},{c:"#4e9a58",n:"Green"},{c:"#c2548a",n:"Rose"},{c:"#4aa0d8",n:"Sky"},
+  {c:"#8a8f3a",n:"Olive"},{c:"#6b778a",n:"Slate"},{c:"#b8743d",n:"Copper"},{c:"#5e6ad2",n:"Indigo"}
 ];
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
@@ -429,6 +520,11 @@ function normalize(v){
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
   v.ui=Object.assign({taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
+  if(!v.palette2){ // move courses onto the calmer colour set, keeping each course distinct
+    const pal=COLORS.map(x=>x.c); let i=0;
+    v.courses.filter(c=>!c.archived).concat(v.courses.filter(c=>c.archived)).forEach(c=>{if(!pal.includes(c.color)) c.color=pal[i++%pal.length]; else i++;});
+    v.palette2=true;
+  }
   return v;
 }
 
@@ -627,7 +723,7 @@ function taskCalendar(all){
     const k=iso(d), list=byDay[k]||[], out=d.getMonth()!==mo-1, isT=k===iso(t);
     const off=sem()&&breakFor(sem(),d);
     h+=`<div class="cal-d ${out?"out":""} ${isT?"today":""}" data-newon="${k}" title="${off?esc(off):""}"><div class="cal-n"><span>${d.getDate()}</span>${off?`<i>${esc(off)}</i>`:""}</div>`;
-    const shown=list.length>calCap?Math.max(calCap-1,0):list.length;
+    const shown=list.length>calCap?Math.max(calCap-1,1):list.length;
     list.slice(0,shown).forEach(x=>{h+=`<button class="cal-t ${x.done?"done":""} ${(!x.done&&new Date(x.due)<new Date())?"late":""}" style="--c:${esc(colorOf(x.course))}" data-edittask="${esc(x.id)}" title="${esc(x.title)}"><span class="dot"></span><span class="tt" dir="auto">${esc(x.title)}</span></button>`});
     if(list.length>shown) h+=`<button class="cal-more" data-day="${k}">+${list.length-shown} more</button>`;
     h+=`</div>`;
