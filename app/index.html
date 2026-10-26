@@ -432,13 +432,31 @@ body{background:var(--bg)!important;background-image:none!important}
 .task .t,.sess .cn,.ogh b,.day-h b,.cal-n,.crs[aria-current="true"],.section-h h2,.seg.modes button[aria-pressed="true"],.tabs button[aria-pressed="true"],.stepper li,.matrix th.now{font-weight:500}
 .brand,.setup h1,.viewbar .vt,.week h1,.calbar h2,.modal h2{font-weight:600}
 .pill,.linkbtn,.seg button,.chip,.chip b,.kind,.cal-h div,.cal-more,.now-pill,.badge{font-weight:500}
+/* blue-grey surfaces + navy top bar */
+:root{--navy:#1f3a63}
+@media (prefers-color-scheme: light){:root{--bg:#e8edf3;--surface:#f8fafc;--surface-2:#eef2f7;--line:#d9e0e9;--line-2:#e6ebf1;--accent-soft:#dbe6f6}}
+.bar{background:var(--navy);border-bottom-color:var(--navy)}
+.bar .brand{color:#fff}
+.bar .seg.modes{background:rgba(255,255,255,.12);border-color:transparent}
+.bar .seg.modes button{color:#c9d6ea}
+.bar .seg.modes button:hover{color:#fff}
+.bar .seg.modes button[aria-pressed="true"]{background:#fff;color:var(--navy);box-shadow:none}
+.bar .ctx select.pill{color:#fff;border-color:rgba(255,255,255,.25);background-color:transparent}
+.bar .ctx select.pill option{color:#18212d}
+.bar .ctx svg{color:#c9d6ea}
+.bar #moreBtn{color:#fff}
+.bar #moreBtn:hover{background:rgba(255,255,255,.12)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--navy:#131b26}}
+
+/* macOS app: window buttons sit on the navy bar */
+body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 </style>
 </head>
 <body>
 
-<header class="bar">
-  <div class="bar-in glass">
-    <div class="brand">
+<header class="bar" data-tauri-drag-region>
+  <div class="bar-in glass" data-tauri-drag-region>
+    <div class="brand" data-tauri-drag-region>
       <img class="brand-mark" src="icon.svg" alt="" aria-hidden="true">
       Taskal
     </div>
@@ -1398,6 +1416,7 @@ document.addEventListener("click",e=>{
   const a=e.target.closest('a[target="_blank"]'); if(!a||!IS_DESKTOP) return;
   e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
 });
+if(IS_DESKTOP&&/Mac/i.test(navigator.platform||navigator.userAgent)) document.body.classList.add("mac-overlay");
 S=load();
 render();
 updateSyncLabel();
