@@ -13,6 +13,20 @@ Course tasks and a weekly lecture tracker for university students.
 
 Your data stays on your own device.
 
+## Install on Windows
+
+1. Download **`Taskal_x.y.z_x64-setup.exe`** from the [latest release](https://github.com/2mj4n5kh7c-beep/taskal/releases/latest).
+2. Open it. Windows may show **“Windows protected your PC”** because Taskal is new and not yet signed. Click **More info → Run anyway**.
+3. Taskal installs for your user only (no admin password) and opens.
+
+## First launch
+
+A short guide walks you through three steps:
+
+1. **Courses**: paste your Moodle calendar link (or choose a calendar file). Taskal lists the courses it finds; untick anything you don’t take.
+2. **Tasks**: Taskal shows the deadlines from those courses and adds them. It keeps checking for new ones every few hours.
+3. **Timetable**: add when each course meets, and when the semester starts. Israeli holidays are marked as no-class days.
+
 ## Connecting your calendar
 
 In Moodle: **Calendar → Import or export calendars → Export calendar → All courses, Recent and next 60 days → Get calendar URL**. Paste that link into Taskal. Many universities open a new Moodle site every year, so you may need a new link each October.
@@ -22,4 +36,4 @@ In Moodle: **Calendar → Import or export calendars → Export calendar → All
 The app is a single page in `app/index.html`. `src-tauri/` wraps it as a desktop app (Tauri 2) and adds a native `fetch_calendar` command so calendar links can be read without browser CORS limits.
 
 - Run locally: `npm install && npx tauri dev`
-- Release: bump the version in `src-tauri/tauri.conf.json`, then push a tag `vX.Y.Z`. GitHub Actions builds the Windows installer and the Mac app.
+- Release: bump the version in `src-tauri/tauri.conf.json`, then run the **Build desktop apps** workflow. GitHub Actions builds the Windows installer and the Mac app.
