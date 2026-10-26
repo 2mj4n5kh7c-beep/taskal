@@ -1376,7 +1376,7 @@ function finishSetup(saveTimes){
   }
   S.setup=null; S.ui.mode=S.tasks.length||!S.slots.length?"tasks":"lectures"; S.ui.week=null; S.ui.course="all";
   Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:""});
-  render(); updateSyncLabel(); toast("You’re all set");
+  render(); scrollTo(0,0); updateSyncLabel(); toast("You’re all set");
 }
 function wireSetup(el,n){
   const on=(id,f)=>{const b=el.querySelector("#"+id); if(b) b.onclick=f};
