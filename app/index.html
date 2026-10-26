@@ -446,7 +446,6 @@ body{background:var(--bg)!important;background-image:none!important}
 .bar .ctx svg{color:#c9d6ea}
 .bar #moreBtn{color:#fff}
 .bar #moreBtn:hover{background:rgba(255,255,255,.12)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--navy:#131b26}}
 
 /* macOS app: window buttons sit on the navy bar */
 body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
@@ -1416,7 +1415,6 @@ document.addEventListener("click",e=>{
   const a=e.target.closest('a[target="_blank"]'); if(!a||!IS_DESKTOP) return;
   e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
 });
-if(IS_DESKTOP&&/Mac/i.test(navigator.platform||navigator.userAgent)) document.body.classList.add("mac-overlay");
 S=load();
 render();
 updateSyncLabel();
