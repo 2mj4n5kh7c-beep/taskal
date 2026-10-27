@@ -477,10 +477,14 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 .sess.tg-s.xs .top{order:0;gap:6px}
 .sess.tg-s.xs .time,.sess.tg-s.xs .sub,.sess.tg-s.xs .note,.sess.tg-s.xs .nb{display:none}
 .sess.tg-s.xs .cn{margin:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+.demobar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:#fff4dc;color:#5c4300;font-size:13.5px;border-bottom:1px solid #f0dca8}
+.demotry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;margin:14px 0 4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--fg)}
 </style>
 </head>
 <body>
 
+<div id="demoBar" class="demobar" hidden><span><b>Demo</b> · this is what a new user sees. Nothing here is saved to your real Taskal.</span><button class="linkbtn" id="demoRestart">Start over</button></div>
 <header class="bar" data-tauri-drag-region>
   <div class="bar-in glass" data-tauri-drag-region>
     <div class="brand" data-tauri-drag-region>
@@ -531,7 +535,8 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 <script>
 (function(){
 "use strict";
-const KEY="taskal.v1";
+const DEMO=/[?&]demo\b/.test(location.search);
+const KEY=DEMO?"taskal.demo":"taskal.v1";
 const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const DAYS_LONG=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const COLORS=[
@@ -567,6 +572,7 @@ function rel(due){
 /* ---------- storage ---------- */
 let S;
 function load(){
+  if(DEMO) return setupState();
   try{const raw=localStorage.getItem(KEY); if(raw){const v=JSON.parse(raw); if(v&&v.courses) return normalize(v);} }catch(e){}
   return setupState();
 }
@@ -1246,6 +1252,19 @@ function restore(){
 }
 
 
+/* ---------- demo: a sample university calendar ---------- */
+function sampleIcs(){
+  const t=today(), stamp=(days,h,m)=>{const d=addDays(t,days);d.setHours(h,m||0,0,0);return d.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"")};
+  const ev=[
+    ["Problem set 2 is due","80135 Linear Algebra 1",3,23,59],["Problem set 3 is due","80135 Linear Algebra 1",10,23,59],["Problem set 4 is due","80135 Linear Algebra 1",17,23,59],["Problem set 1 is due","80135 Linear Algebra 1",-4,23,59],
+    ["Exercise 2 is due","77104 Classical Mechanics",5,12,0],["Exercise 3 is due","77104 Classical Mechanics",12,12,0],["Midterm quiz","77104 Classical Mechanics",19,10,0],
+    ["Response paper 1 due","14102 מבוא לפילוסופיה",6,23,59],["Reading: Plato, Meno opens","14102 מבוא לפילוסופיה",1,8,0],["Response paper 2 due","14102 מבוא לפילוסופיה",20,23,59],
+    ["Lab report 1 is due","77121 Physics Lab A",8,18,0],["Lab report 2 is due","77121 Physics Lab A",22,18,0],
+    ["Library survey closes","Site announcements",4,23,59]
+  ];
+  return "BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"+ev.map((e,i)=>`BEGIN:VEVENT\r\nUID:demo-${i}\r\nSUMMARY:${e[0]}\r\nDTSTART:${stamp(e[2],e[3],e[4])}\r\nCATEGORIES:${e[1]}\r\nDESCRIPTION:Submit on Moodle\r\nEND:VEVENT`).join("\r\n")+"\r\nEND:VCALENDAR";
+}
+
 /* ---------- setup guide: 1 courses → 2 tasks → 3 timetable ---------- */
 function guessSemester(){
   const t=today(), y=t.getFullYear(), m=t.getMonth();
@@ -1299,6 +1318,7 @@ function renderSetup(){
       ${IS_DESKTOP?"":`<p class="hint">In a web browser the link can’t be read directly. Use the calendar file instead, or the <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app</a> for automatic updates.</p>`}
       ${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}
       ${HOWTO}
+      ${DEMO?`<div class="demotry"><span>No Moodle link at hand? Try the guide with a sample calendar.</span><button class="pill primary" id="oSample">Use a sample calendar</button></div>`:""}
       <div class="alt"><button class="linkbtn" id="oFile">Use a calendar file (.ics) instead</button><span>·</span><button class="linkbtn" id="oManual">Add courses by hand</button></div>`;
     } else {
       const cnt=c=>{const {map}=onbCats(ONB.text);return (map[c]||[]).length};
@@ -1391,6 +1411,7 @@ function wireSetup(el,n){
     });
     on("oFile",()=>{const f=$("#fileIcs");f.value="";f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();
       r.onload=()=>{try{onbLoad(String(r.result));ONB.err=""}catch(e){ONB.err=e.message}render()};r.readAsText(file)};f.click()});
+    on("oSample",()=>{onbLoad(sampleIcs());ONB.err="";render()});
     on("oManual",()=>{ONB.text="BEGIN:VCALENDAR\nEND:VCALENDAR";ONB.cats=[];ONB.extra=[""];render()});
     on("oAddX",()=>{ONB.extra.push("");render();const ins=el.querySelectorAll("[data-extra]");ins.length&&ins[ins.length-1].focus()});
     on("oSkip",()=>finishSetup(false));
@@ -1497,6 +1518,7 @@ document.addEventListener("click",e=>{
   const a=e.target.closest('a[target="_blank"]'); if(!a||!IS_DESKTOP) return;
   e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
 });
+if(DEMO){$("#demoBar").hidden=false;$("#demoRestart").onclick=()=>{Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:""});S=setupState();render();scrollTo(0,0)}}
 S=load();
 render();
 updateSyncLabel();
