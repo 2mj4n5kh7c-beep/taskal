@@ -1114,6 +1114,18 @@ function parseIcs(text){
   }
   return out;
 }
+const norm=x=>String(x||"").toLowerCase().replace(/[\s\-–—:.,"'׳״]+/g,"");
+/* find the course a calendar category belongs to: by name, by its Moodle name, or by the 5-digit course number */
+function matchCourse(cat){
+  const lc=cat.toLowerCase(), live=S.courses.filter(c=>!c.archived), all=live.concat(S.courses.filter(c=>c.archived));
+  let c=all.find(c=>c.name.toLowerCase()===lc||(c.moodle&&c.moodle.toLowerCase()===lc)); if(c) return c;
+  const num=(cat.match(/\b(\d{5})\b/)||[])[1];
+  if(num){
+    c=all.find(c=>c.name.includes(num)||(c.moodle||"").includes(num)); if(c) return c;
+    c=all.find(c=>S.tasks.some(t=>t.course===c.id&&new RegExp("\\b"+num+"\\b").test(t.notes||""))); if(c) return c;
+  }
+  const n=norm(cat); c=live.find(c=>norm(c.name).length>=6&&(n.includes(norm(c.name))||norm(c.name).includes(n))); return c||null;
+}
 function cleanTitle(s){return s.replace(/\s+(is due|should be completed|closes|is due to be graded|due)$/i,"").trim()}
 function importIcs(text,opts){
   opts=opts||{};
@@ -1130,7 +1142,8 @@ function importIcs(text,opts){
     if(S.cal.since&&due0&&iso(due0)<S.cal.since&&!S.tasks.some(t=>t.uid===u0)){skipped++;return}
     let cid="";
     if(catName){
-      let c=S.courses.find(c=>c.name.toLowerCase()===catName.toLowerCase()||(c.moodle&&c.moodle.toLowerCase()===catName.toLowerCase()));
+      let c=matchCourse(catName);
+      if(c&&!c.moodle) c.moodle=catName;
       if(!c){c={id:uid(),name:catName,moodle:catName,color:COLORS[S.courses.length%COLORS.length].c,semester:S.activeSemester,archived:false};S.courses.push(c);newCourses++}
       cid=c.id;
     }
@@ -1138,9 +1151,14 @@ function importIcs(text,opts){
     const desc=(ev.DESCRIPTION||"").trim();
     const link=ev.URL||((desc.match(/https?:\/\/\S+/)||[])[0]||"");
     const u=ev.UID||(summary+"|"+(due?due.toISOString():""));
-    const existing=S.tasks.find(t=>t.uid===u);
+    let existing=S.tasks.find(t=>t.uid===u);
     const v={title:cleanTitle(summary),course:cid,due:due?due.toISOString():"",notes:desc.replace(/https?:\/\/\S+/g,"").trim().slice(0,600),link,tentative:false};
-    if(existing){Object.assign(existing,v);updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
+    if(!existing){ // a task added earlier by hand or by another app: same course, same name, about the same time
+      const nt=norm(v.title), dd=due?due.getTime():null;
+      existing=S.tasks.find(t=>!t.uid&&t.course===cid&&norm(t.title)===nt&&(!dd||!t.due||Math.abs(Date.parse(t.due)-dd)<36*36e5));
+      if(existing){existing.uid=u; if(existing.notes) v.notes=existing.notes; if(existing.link&&!v.link) v.link=existing.link;}
+    }
+    if(existing){const keepTitle=existing.title; Object.assign(existing,v); if(keepTitle&&norm(keepTitle)===norm(v.title)) existing.title=keepTitle; updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
   });
   S.isExample=false;
   if(!opts.silent){S.ui.course="all"; S.ui.mode="tasks";}
@@ -1198,7 +1216,7 @@ function openImport(){
   m.querySelector("#calSave").onclick=async()=>{
     const url=m.querySelector("#calUrl").value.trim();
     if(!/^https?:\/\//i.test(url)){res.innerHTML=`<div class="result err">Paste the full link, starting with https://</div>`;return}
-    S.cal.url=url; S.cal.linkYear=academicYear(today()); S.cal.error=""; save();
+    S.cal.url=url; S.cal.linkYear=academicYear(today()); S.cal.error=""; if(!S.cal.since&&S.tasks.length) S.cal.since=iso(addDays(today(),-1)); save();
     if(!IS_DESKTOP){res.innerHTML=`<div class="result">Link saved. It will sync automatically when you open Taskal in the desktop app.</div>`;render();return}
     res.innerHTML=`<div class="result">Syncing…</div>`;
     try{const x=await syncNow(); res.innerHTML=`<div class="result"><b>Synced.</b> ${esc(summarize(x))}.</div>`}
