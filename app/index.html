@@ -1185,12 +1185,20 @@ function importIcs(text,opts){
     const v={title:cleanTitle(summary),course:cid,due:due?due.toISOString():"",notes:desc.replace(/https?:\/\/\S+/g,"").trim().slice(0,600),link,tentative:false};
     if(!existing){ // a task added earlier by hand or by another app: same course, same name, about the same time
       const nt=norm(v.title), dd=due?due.getTime():null;
-      existing=S.tasks.find(t=>!t.uid&&t.course===cid&&norm(t.title)===nt&&(!dd||!t.due||Math.abs(Date.parse(t.due)-dd)<36*36e5));
+      const same=S.tasks.filter(t=>!t.uid&&t.course===cid&&norm(t.title)===nt);
+      existing=same.length===1?same[0]:same.find(t=>!dd||!t.due||Math.abs(Date.parse(t.due)-dd)<36*36e5);
       if(existing){existing.uid=u; if(existing.notes) v.notes=existing.notes; if(existing.link&&!v.link) v.link=existing.link;}
     }
     if(existing){const keepTitle=existing.title; Object.assign(existing,v); if(keepTitle&&norm(keepTitle)===norm(v.title)) existing.title=keepTitle; updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
   });
   S.tasks=S.tasks.filter(t=>!(t.uid&&isAttendance({SUMMARY:t.title})));
+  // an older hand-made copy of a task that now comes from the calendar: keep the calendar one (and its "done" mark)
+  S.tasks=S.tasks.filter(t=>{
+    if(t.uid||!t.course) return true;
+    const twin=S.tasks.find(x=>x.uid&&x.course===t.course&&norm(x.title)===norm(t.title)&&!S.tasks.some(y=>y!==t&&!y.uid&&y.course===t.course&&norm(y.title)===norm(t.title)));
+    if(!twin) return true;
+    if(t.done) twin.done=true; if(t.notes&&!twin.notes) twin.notes=t.notes; return false;
+  });
   S.isExample=false;
   if(!opts.silent){S.ui.course="all"; S.ui.mode="tasks";}
   render();
