@@ -1189,6 +1189,8 @@ function importIcs(text,opts){
       existing=same.length===1?same[0]:same.find(t=>!dd||!t.due||Math.abs(Date.parse(t.due)-dd)<36*36e5);
       if(existing){existing.uid=u; if(existing.notes) v.notes=existing.notes; if(existing.link&&!v.link) v.link=existing.link;}
     }
+    if(existing&&!v.notes) delete v.notes; // Moodle sent no description: keep what's there
+    if(existing&&!v.link&&existing.link) delete v.link;
     if(existing){const keepTitle=existing.title; Object.assign(existing,v); if(keepTitle&&norm(keepTitle)===norm(v.title)) existing.title=keepTitle; updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
   });
   S.tasks=S.tasks.filter(t=>!(t.uid&&isAttendance({SUMMARY:t.title})));
@@ -1220,7 +1222,7 @@ async function syncNow(){
     S.cal.lastSync=new Date().toISOString(); S.cal.lastResult=summarize(x); S.cal.error="";
     return x;
   }catch(e){
-    const msg=String(e&&e.message||e);
+    const msg=String(e&&e.message||e).replace(/\(?https?:\/\/\S+\)?/g,"").replace(/\s+for url\s*$/,"").trim();
     S.cal.error=IS_DESKTOP?(/40[13]/.test(msg)?"Your university refused the link. It may have expired; get a new one from Moodle.":msg):"Browsers can’t read calendar links directly. Use the Taskal desktop app for automatic sync, or import the calendar file instead.";
     throw new Error(S.cal.error);
   }finally{syncing=false; updateSyncLabel(); render();}

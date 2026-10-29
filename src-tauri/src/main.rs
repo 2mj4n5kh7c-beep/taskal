@@ -19,12 +19,15 @@ async fn fetch_calendar(url: String) -> Result<String, String> {
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("Couldn't reach your university: {e}"))?;
+        .map_err(|e| {
+            if e.is_timeout() { "Your university didn't answer in time. Try again in a minute.".to_string() }
+            else { format!("Couldn't reach your university ({}). Check your internet connection.", e.without_url()) }
+        })?;
     let status = resp.status();
     if !status.is_success() {
         return Err(format!("HTTP {}", status.as_u16()));
     }
-    resp.text().await.map_err(|e| e.to_string())
+    resp.text().await.map_err(|e| e.without_url().to_string())
 }
 
 fn show_main(app: &tauri::AppHandle) {
