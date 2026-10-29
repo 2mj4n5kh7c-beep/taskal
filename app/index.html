@@ -482,6 +482,10 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 .demotry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;margin:14px 0 4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--fg)}
 
 .rleads{display:flex;flex-direction:column;gap:8px;margin-left:26px}
+
+.mlink{color:var(--accent);font-weight:500;text-decoration:none;white-space:nowrap}
+.mlink:hover,.nlink:hover{text-decoration:underline}
+.nlink{color:var(--accent);font-weight:500;text-decoration:none}
 </style>
 </head>
 <body>
@@ -588,6 +592,7 @@ function normalize(v){
   v.semesters=v.semesters||[]; v.courses=v.courses||[]; v.tasks=v.tasks||[]; v.slots=v.slots||[];
   v.seen=v.seen||{}; v.notes=v.notes||{};
   v.rem=Object.assign({on:true,leads:[1440,180]},v.rem||{}); v.notified=v.notified||{};
+  v.tasks=v.tasks.filter(t=>!(t.uid&&/\b(attendance|attendence)\b|נוכחות/i.test(t.title||"")));
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
   v.ui=Object.assign({taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
@@ -720,8 +725,21 @@ function renderSide(){
 }
 
 /* ---------- render: tasks ---------- */
+const URL_RE=/https?:\/\/[^\s<>"')]+[^\s<>"').,;:]/g;
+const linkLabel=u=>/moodle/i.test(u)?"Open in Moodle":/canvas|instructure/i.test(u)?"Open in Canvas":"Open link";
+/* notes: turn web addresses into short links, drop leftover "Moodle:" labels */
+function notesHtml(text){
+  let out="", last=0; const src=String(text||"");
+  src.replace(URL_RE,(u,i)=>{out+=esc(src.slice(last,i))+`<a href="${esc(u)}" target="_blank" rel="noopener" class="nlink">${linkLabel(u)} ↗</a>`;last=i+u.length;return u});
+  out+=esc(src.slice(last));
+  return out.replace(/(Moodle|Canvas)\s*:\s*(?=<a )/g,"");
+}
+const firstUrl=x=>(String(x||"").match(URL_RE)||[])[0]||"";
 function taskCard(t){
   const c=course(t.course), due=t.due?new Date(t.due):null, now=new Date();
+  const link=t.link||firstUrl(t.notes);
+  // the link is shown once, in the line above; don't repeat it inside the notes
+  const notes=link&&!t.link?String(t.notes).replace(link,"").replace(/(^|\n)\s*(Moodle|Canvas)\s*:\s*(\n|$)/g,"$1").trim():t.notes;
   let dueTxt="";
   if(due){
     const cls=!t.done&&due<now?"late":(!t.done&&due-now<2*864e5?"soon":"");
@@ -731,10 +749,10 @@ function taskCard(t){
     <button class="check" data-toggle="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Mark as not done":"Mark as done"}">${t.done?I.check:""}</button>
     <div style="min-width:0">
       <div class="t" dir="auto">${esc(t.title)}</div>
-      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}</div>
-      ${t.notes?`<div class="notes" dir="auto">${esc(t.notes)}</div>`:""}
+      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}</div>
+      ${notes?`<div class="notes" dir="auto">${notesHtml(notes)}</div>`:""}
     </div>
-    <div class="acts">${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" aria-label="Open in Moodle" title="Open link">${I.link}</a>`:""}<button data-edittask="${esc(t.id)}" aria-label="Edit task" title="Edit">${I.edit}</button></div>
+    <div class="acts"><button data-edittask="${esc(t.id)}" aria-label="Edit task" title="Edit">${I.edit}</button></div>
   </article>`;
 }
 function renderTasks(){
@@ -1126,6 +1144,17 @@ function matchCourse(cat){
   }
   const n=norm(cat); c=live.find(c=>norm(c.name).length>=6&&(n.includes(norm(c.name))||norm(c.name).includes(n))); return c||null;
 }
+/* Moodle "attendance" sessions are not tasks */
+const isAttendance=ev=>/\b(attendance|attendence)\b|נוכחות/i.test(ev.SUMMARY||"");
+/* Moodle's calendar file has no page address, so link to that day in the student's own Moodle calendar */
+function moodleEventLink(ev){
+  const due=ev.DTSTART||ev.DTEND; if(!due) return "";
+  const m=(S.cal.url||"").match(/^(https?:\/\/.+?)\/calendar\/export_execute\.php/i);
+  let base=m?m[1]:""; if(!base){const h=((ev.UID||"").split("@")[1]||""); if(/moodle/i.test(h)) base="https://"+h;}
+  if(!base) return "";
+  const id=((ev.UID||"").match(/^(\d+)@/)||[])[1];
+  return `${base}/calendar/view.php?view=day&time=${Math.floor(due.getTime()/1000)}${id?"#event_"+id:""}`;
+}
 function cleanTitle(s){return s.replace(/\s+(is due|should be completed|closes|is due to be graded|due)$/i,"").trim()}
 function importIcs(text,opts){
   opts=opts||{};
@@ -1136,6 +1165,7 @@ function importIcs(text,opts){
   evs.forEach(ev=>{
     const summary=ev.SUMMARY||"Untitled";
     if(/\bopens?$/i.test(summary)||/ - opens\b/i.test(summary)){skipped++;return}
+    if(isAttendance(ev)){skipped++;return}
     const catName=(ev.CATEGORIES||"").split(",")[0].trim();
     if(catName&&(S.cal.ignore||[]).some(x=>x.toLowerCase()===catName.toLowerCase())){skipped++;return}
     const due0=ev.DTSTART||ev.DTEND, u0=ev.UID||(summary+"|"+(due0?due0.toISOString():""));
@@ -1149,7 +1179,7 @@ function importIcs(text,opts){
     }
     const due=ev.DTSTART||ev.DTEND;
     const desc=(ev.DESCRIPTION||"").trim();
-    const link=ev.URL||((desc.match(/https?:\/\/\S+/)||[])[0]||"");
+    const link=ev.URL||((desc.match(/https?:\/\/\S+/)||[])[0]||"")||moodleEventLink(ev);
     const u=ev.UID||(summary+"|"+(due?due.toISOString():""));
     let existing=S.tasks.find(t=>t.uid===u);
     const v={title:cleanTitle(summary),course:cid,due:due?due.toISOString():"",notes:desc.replace(/https?:\/\/\S+/g,"").trim().slice(0,600),link,tentative:false};
@@ -1160,6 +1190,7 @@ function importIcs(text,opts){
     }
     if(existing){const keepTitle=existing.title; Object.assign(existing,v); if(keepTitle&&norm(keepTitle)===norm(v.title)) existing.title=keepTitle; updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
   });
+  S.tasks=S.tasks.filter(t=>!(t.uid&&isAttendance({SUMMARY:t.title})));
   S.isExample=false;
   if(!opts.silent){S.ui.course="all"; S.ui.mode="tasks";}
   render();
@@ -1312,7 +1343,7 @@ const HOWTO=`<details class="howto"><summary>Where do I find this link?</summary
 function onbCats(text){
   const evs=parseIcs(text), map={};
   evs.forEach(ev=>{
-    const sm=ev.SUMMARY||""; if(/\bopens?$/i.test(sm)||/ - opens\b/i.test(sm)) return;
+    const sm=ev.SUMMARY||""; if(/\bopens?$/i.test(sm)||/ - opens\b/i.test(sm)||isAttendance(ev)) return;
     const c=(ev.CATEGORIES||"").split(",")[0].trim()||"";
     (map[c]=map[c]||[]).push(ev);
   });
