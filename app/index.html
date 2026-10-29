@@ -480,6 +480,8 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 
 .demobar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 16px;background:#fff4dc;color:#5c4300;font-size:13.5px;border-bottom:1px solid #f0dca8}
 .demotry{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;margin:14px 0 4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--fg)}
+
+.rleads{display:flex;flex-direction:column;gap:8px;margin-left:26px}
 </style>
 </head>
 <body>
@@ -503,6 +505,7 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
       </button>
       <div id="menu" class="menu glass" hidden>
         <button data-act="semesters" type="button">Semesters &amp; holidays…</button>
+        <button data-act="reminders" type="button">Reminders…</button>
         <button data-act="newcourse" type="button">New course…</button>
         <hr>
         <button data-act="backup" type="button">Save a backup file</button>
@@ -584,6 +587,7 @@ function save(){
 function normalize(v){
   v.semesters=v.semesters||[]; v.courses=v.courses||[]; v.tasks=v.tasks||[]; v.slots=v.slots||[];
   v.seen=v.seen||{}; v.notes=v.notes||{};
+  v.rem=Object.assign({on:true,leads:[1440,180]},v.rem||{}); v.notified=v.notified||{};
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
   v.ui=Object.assign({taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
@@ -1352,7 +1356,8 @@ function renderSetup(){
           ${evs.slice(0,4).map(ev=>{const d=ev.DTSTART||ev.DTEND;return `<div class="otask"><span dir="auto">${esc(cleanTitle(ev.SUMMARY||""))}</span><small class="tnum">${d?d.toLocaleDateString(LOC,{month:"short",day:"numeric"}):""}</small></div>`}).join("")}
           ${evs.length>4?`<div class="otask more">+${evs.length-4} more</div>`:""}${evs.length?"":`<div class="otask more">Nothing coming up</div>`}</div>`;
       });
-      h+=`</div><label class="chk" style="margin-top:12px"><input type="checkbox" id="oPast" ${ONB.past?"checked":""}> Also add deadlines that already passed</label>`;
+      h+=`</div><label class="chk" style="margin-top:12px"><input type="checkbox" id="oPast" ${ONB.past?"checked":""}> Also add deadlines that already passed</label>
+        <label class="chk" style="margin-top:8px"><input type="checkbox" id="oRem" ${S.rem.on?"checked":""}> Remind me a day before each deadline, and again 3 hours before</label>`;
       ONB.total=total;
     }
     h+=`<div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="pill primary" id="oNext2" ${ONB.busy?"disabled":""}>${ONB.text&&ONB.total?`Add ${ONB.total} task${ONB.total===1?"":"s"} →`:"Next →"}</button></div>`;
@@ -1433,6 +1438,7 @@ function wireSetup(el,n){
   if(n===2){
     on("oBack",()=>{S.setup=1;render()});
     const p=el.querySelector("#oPast"); if(p) p.onchange=()=>{ONB.past=p.checked;render()};
+    const rm=el.querySelector("#oRem"); if(rm) rm.onchange=()=>{S.rem.on=rm.checked; if(rm.checked) notifyAllowed(true)};
     on("oNext2",()=>{
       if(ONB.text&&ONB.total){S.cal.since=ONB.past?null:iso(today()); try{importIcs(ONB.text,{silent:true}); S.cal.lastSync=S.cal.url?new Date().toISOString():null;}catch(e){}}
       S.setup=3; render();
@@ -1454,6 +1460,79 @@ function wireSetup(el,n){
   }
 }
 
+
+/* ---------- reminders (notifications before deadlines) ---------- */
+const LEADS=[[10080,"1 week before"],[2880,"2 days before"],[1440,"1 day before"],[180,"3 hours before"],[60,"1 hour before"]];
+const NOTIF=IS_DESKTOP?(window.__TAURI__.notification||null):null;
+async function notifyAllowed(ask){
+  try{
+    if(NOTIF){ if(await NOTIF.isPermissionGranted()) return true; if(!ask) return false; return (await NOTIF.requestPermission())==="granted"; }
+    if(!("Notification" in window)) return false;
+    if(Notification.permission==="granted") return true; if(!ask||Notification.permission==="denied") return false;
+    return (await Notification.requestPermission())==="granted";
+  }catch(e){return false}
+}
+async function notify(title,body){
+  if(!(await notifyAllowed(false))) return false;
+  try{ if(NOTIF) NOTIF.sendNotification({title,body}); else new Notification(title,{body,icon:"icon.svg"}); return true; }catch(e){return false}
+}
+function dueWords(due){
+  const mins=Math.round((due-new Date())/6e4);
+  if(mins<60) return `Due in ${Math.max(1,mins)} min`;
+  const h=Math.round(mins/60);
+  const t=today(), d=new Date(due.getFullYear(),due.getMonth(),due.getDate()), days=Math.round((d-t)/864e5);
+  const at=" at "+pad(due.getHours())+":"+pad(due.getMinutes());
+  if(h<6) return `Due in ${h} hour${h===1?"":"s"}`;
+  if(days===0) return `Due today${at}`;
+  if(days===1) return `Due tomorrow${at}`;
+  return `Due ${due.toLocaleDateString(LOC,{weekday:"long"})}${at}`;
+}
+async function checkReminders(){
+  if(!S||S.setup||!S.rem||!S.rem.on||!S.rem.leads.length) return;
+  const now=Date.now(), leads=S.rem.leads.slice().sort((a,b)=>a-b);
+  let changed=false;
+  for(const t of S.tasks){
+    if(t.done||!t.due) continue;
+    const due=Date.parse(t.due); if(!(due>now)) continue;
+    const c=course(t.course); if(c&&c.archived) continue;
+    const reached=leads.filter(L=>now>=due-L*6e4); if(!reached.length) continue;
+    const L=reached[0], k=t.id+"@"+t.due+"@"+L;
+    if(S.notified[k]) continue;
+    reached.forEach(x=>{S.notified[t.id+"@"+t.due+"@"+x]=1}); changed=true;
+    await notify(dueWords(new Date(due)), t.title+(c?" · "+c.name:""));
+  }
+  // forget reminders for deadlines long gone
+  Object.keys(S.notified).forEach(k=>{const d=Date.parse(k.split("@")[1]);if(!(d>now-14*864e5)){delete S.notified[k];changed=true}});
+  if(changed) save();
+}
+const AUTO=IS_DESKTOP?(window.__TAURI__.autostart||null):null;
+async function editReminders(){
+  let login=false; try{ if(AUTO) login=await AUTO.isEnabled(); }catch(e){}
+  const allowed=await notifyAllowed(false);
+  const m=openModal(`<h2>Reminders</h2><p class="hint">Taskal sends a notification before each deadline that isn’t done yet.</p>
+    <label class="chk" style="margin:10px 0 12px"><input type="checkbox" id="rOn" ${S.rem.on?"checked":""}> <b>Remind me about deadlines</b></label>
+    <div id="rLeads" class="rleads">${LEADS.map(([v,l])=>`<label class="chk"><input type="checkbox" value="${v}" ${S.rem.leads.includes(v)?"checked":""}> ${l}</label>`).join("")}</div>
+    ${IS_DESKTOP?`<label class="chk" style="margin-top:14px"><input type="checkbox" id="rLogin" ${login?"checked":""}> Open Taskal in the background when I log in</label>
+      <p class="hint" style="margin:4px 0 0 26px">Reminders arrive while Taskal is running. Closing the window keeps it running; quit it from the ${/Mac/i.test(navigator.userAgent)?"Taskal menu":"Taskal icon by the clock"}.</p>`
+      :`<p class="hint" style="margin-top:12px">In the browser, reminders arrive only while this page is open. The <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app</a> reminds you even when its window is closed.</p>`}
+    ${allowed?"":`<div class="result err" style="margin-top:12px">Notifications aren’t allowed yet. Click “Send a test” and choose <b>Allow</b>. If nothing appears, allow Taskal in your computer’s notification settings.</div>`}
+    <div class="foot"><button class="pill" id="rTest">Send a test</button><span style="flex:1"></span><button class="pill" id="rClose">Cancel</button><button class="pill primary" id="rSave">Save</button></div>`);
+  const sync=()=>{m.querySelector("#rLeads").style.opacity=m.querySelector("#rOn").checked?1:.45};
+  m.querySelector("#rOn").onchange=sync; sync();
+  m.querySelector("#rTest").onclick=async()=>{const ok=await notifyAllowed(true); if(!ok){toast("Notifications are blocked. Allow Taskal in your computer’s notification settings.");return}
+    const next=S.tasks.filter(t=>!t.done&&t.due&&Date.parse(t.due)>Date.now()).sort((a,b)=>Date.parse(a.due)-Date.parse(b.due))[0];
+    await notify(next?dueWords(new Date(next.due)):"Taskal reminders are on", next?next.title+" (test)":"You’ll get a notification before each deadline."); toast("Test sent")};
+  m.querySelector("#rClose").onclick=closeModal;
+  m.querySelector("#rSave").onclick=async()=>{
+    S.rem.on=m.querySelector("#rOn").checked;
+    S.rem.leads=[...m.querySelectorAll("#rLeads input:checked")].map(x=>+x.value);
+    const lg=m.querySelector("#rLogin");
+    if(lg&&AUTO){try{ if(lg.checked&&!login) await AUTO.enable(); if(!lg.checked&&login) await AUTO.disable(); }catch(e){}}
+    if(S.rem.on) await notifyAllowed(true);
+    closeModal(); save(); toast(S.rem.on?"Reminders saved":"Reminders turned off"); checkReminders();
+  };
+}
+
 /* ---------- events ---------- */
 function moveWeek(n){const s=sem();if(!s)return;S.ui.week=Math.min(Math.max((S.ui.week??currentWeek(s))+n,0),s.weeks-1);render()}
 function hideMenu(){$("#menu").hidden=true;$("#moreBtn").setAttribute("aria-expanded","false")}
@@ -1470,6 +1549,7 @@ function act(a){
   else if(a==="toggledone"){S.ui.showDone=!S.ui.showDone;render()}
   else if(a==="thisweek"){S.ui.week=null;render()}
   else if(a==="editfirst"){const c=activeCourses().find(c=>S.ui.course==="all"||c.id===S.ui.course);c&&editCourse(c.id)}
+  else if(a==="reminders") editReminders();
   else if(a==="setup"){S.setup=1;Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:""});render()}
   else if(a==="example"){confirmReplace("Load the example semester? This replaces everything you have in Taskal.",()=>{const ui=S.ui;S=example();S.ui=Object.assign(S.ui,{mode:ui.mode});render()})}
   else if(a==="empty"){
@@ -1524,6 +1604,8 @@ render();
 updateSyncLabel();
 autoSync();
 setInterval(()=>{autoSync();updateSyncLabel()},10*60*1000);
+setInterval(checkReminders,60*1000);
+setTimeout(async()=>{ if(!S.setup&&S.rem.on&&IS_DESKTOP) await notifyAllowed(true); checkReminders(); },1500);
 })();
 </script>
 </body>
