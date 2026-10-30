@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -486,6 +486,25 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 .mlink{color:var(--accent);font-weight:500;text-decoration:none;white-space:nowrap}
 .mlink:hover,.nlink:hover{text-decoration:underline}
 .nlink{color:var(--accent);font-weight:500;text-decoration:none}
+
+/* Taskal 2: undo toast, loud overdue, whole-row open, date readouts */
+.toast{display:flex;align-items:center;gap:14px;max-width:min(560px,calc(100vw - 32px))}
+.toast .tmsg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toast.has-act{padding:6px 6px 6px 18px;background:#1f2b3d;color:#fff;box-shadow:0 8px 24px rgba(20,30,50,.25)}
+.toast .tact{flex:none;border:0;border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;color:#9cc8ff;background:rgba(255,255,255,.08);cursor:pointer}
+.toast .tact:hover{background:rgba(255,255,255,.16)}
+.section-h.is-late h2{color:var(--danger);display:flex;align-items:center;gap:6px;font-weight:600}
+.section-h.is-late .n{color:#fff;background:var(--danger);border-radius:999px;padding:0 7px;font-size:11.5px;font-weight:600;line-height:18px}
+.task.is-late{background:color-mix(in srgb,var(--danger) 5%,var(--surface))!important;border-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
+.task[data-open]{cursor:pointer;transition:background .15s,border-color .15s,opacity .35s,transform .35s}
+.task[data-open]:hover{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.task.leaving{opacity:0;transform:translateX(12px)}
+.check{position:relative;cursor:pointer}
+.check::after{content:"";position:absolute;inset:-9px}
+.check:hover{border-color:var(--ok)}
+.datehint{margin:-4px 0 12px;font-size:12.5px;color:var(--muted)}
+.osem .datehint{display:block;margin:6px 2px 0}
+@media (prefers-reduced-motion: reduce){.task[data-open]{transition:none}}
 </style>
 </head>
 <body>
@@ -562,9 +581,10 @@ const parseISO=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const sundayOf=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x};
 const today=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
-const LOC="en-US";
+const LOC="en-GB";
 const fmtShort=d=>d.toLocaleDateString(LOC,{day:"numeric",month:"short"});
 const fmtDay=d=>d.getDate()+"/"+(d.getMonth()+1);
+const longDate=d=>d.toLocaleDateString(LOC,{weekday:"short",day:"numeric",month:"long",year:"numeric"});
 function rel(due){
   const ms=due-new Date(), abs=Math.abs(ms), h=abs/36e5, dd=Math.round(abs/864e5);
   let s;
@@ -677,10 +697,20 @@ function progress(s,courseId){
   });
   return {held,seen};
 }
-function toast(msg){
-  const el=document.createElement("div");el.className="toast glass";el.textContent=msg;el.setAttribute("role","status");
-  document.body.appendChild(el);setTimeout(()=>el.remove(),2600);
+/* toast: one at a time; with {undo:snapshot} it shows an Undo button for 6 s */
+let toastEl=null,toastTimer=null;
+function toast(msg,opt){
+  opt=opt||{};
+  if(toastEl){toastEl.remove();clearTimeout(toastTimer)}
+  const el=document.createElement("div");el.className="toast glass"+(opt.undo?" has-act":"");el.setAttribute("role","status");
+  const t=document.createElement("span");t.className="tmsg";t.dir="auto";t.textContent=msg;el.appendChild(t);
+  if(opt.undo){const b=document.createElement("button");b.type="button";b.className="tact";b.textContent="Undo";
+    b.onclick=()=>{restoreSnapshot(opt.undo);el.remove();toastEl=null;toast("Undone")};el.appendChild(b);}
+  document.body.appendChild(el);toastEl=el;
+  toastTimer=setTimeout(()=>{el.remove();if(toastEl===el)toastEl=null},opt.undo?6000:2600);
 }
+const snapshot=()=>JSON.stringify(S);
+function restoreSnapshot(snap){const ui=S.ui;S=normalize(JSON.parse(snap));S.ui=ui;render()}
 
 /* ---------- icons ---------- */
 const I={
@@ -693,6 +723,7 @@ const I={
   right:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',
   list:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>',
   grid:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M6 6.5v7.5M10 6.5v7.5M2 10.2h12"/></svg>',
+  alert:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.8v3.6M8 11.2h.01"/></svg>',
   x:'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'
 };
 
@@ -742,10 +773,11 @@ function taskCard(t){
   const notes=link&&!t.link?String(t.notes).replace(link,"").replace(/(^|\n)\s*(Moodle|Canvas)\s*:\s*(\n|$)/g,"$1").trim():t.notes;
   let dueTxt="";
   if(due){
-    const cls=!t.done&&due<now?"late":(!t.done&&due-now<2*864e5?"soon":"");
-    dueTxt=`<span class="${cls}" title="${esc(due.toLocaleString(LOC))}">${I.clock} ${rel(due)} · ${due.toLocaleDateString(LOC,{weekday:"short",day:"numeric",month:"short"})}${due.getHours()||due.getMinutes()?" "+pad(due.getHours())+":"+pad(due.getMinutes()):""}</span>`;
+    const cls=!t.done&&due<now?"late":(!t.done&&due-now<864e5?"soon":"");
+    dueTxt=`<span class="${cls}" title="${esc(due.toLocaleString(LOC,{weekday:"long",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}))}">${I.clock} ${rel(due)} · ${due.toLocaleDateString(LOC,{weekday:"short",day:"numeric",month:"short"})}${due.getHours()||due.getMinutes()?" "+pad(due.getHours())+":"+pad(due.getMinutes()):""}</span>`;
   }
-  return `<article class="task ${t.done?"done":""}" style="--c:${esc(colorOf(t.course))}">
+  const late=!t.done&&due&&due<now, soon=!t.done&&due&&!late&&due-now<864e5;
+  return `<article class="task ${t.done?"done":""} ${late?"is-late":""} ${soon?"is-soon":""}" style="--c:${esc(colorOf(t.course))}" data-open="${esc(t.id)}" tabindex="0" aria-label="${esc(t.title)}, open details">
     <button class="check" data-toggle="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Mark as not done":"Mark as done"}">${t.done?I.check:""}</button>
     <div style="min-width:0">
       <div class="t" dir="auto">${esc(t.title)}</div>
@@ -774,13 +806,23 @@ function renderTasks(){
   }
   groups.forEach(([name,list])=>{
     if(!list.length) return;
-    h+=`<div class="section-h"><h2>${name}</h2><span class="n tnum">${list.length}</span></div><div class="list">${list.map(taskCard).join("")}</div>`;
+    h+=`<div class="section-h ${name==="Overdue"?"is-late":""}"><h2>${name==="Overdue"?I.alert:""}${name}</h2><span class="n tnum">${list.length}</span></div><div class="list">${list.map(taskCard).join("")}</div>`;
   });
   if(done.length){
     h+=`<div class="section-h"><h2>Done</h2><span class="n tnum">${done.length}</span><button class="pill" style="margin-left:auto;padding:4px 12px;font-size:12px" data-act="toggledone">${S.ui.showDone?"Hide":"Show"}</button></div>`;
     if(S.ui.showDone) h+=`<div class="list">${done.map(taskCard).join("")}</div>`;
   }
   $("#main").innerHTML=h;
+}
+/* tick a task: show the check, let the row fade out, then move it; Undo puts it back */
+function toggleDone(id,btn){
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  const snap=snapshot(); t.done=!t.done;
+  const card=btn&&btn.closest(".task");
+  const finish=()=>{render();toast(t.done?"Done: “"+t.title+"”":"Back on your list: “"+t.title+"”",{undo:snap})};
+  if(card&&t.done&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    btn.setAttribute("aria-pressed","true");btn.innerHTML=I.check;card.classList.add("leaving");setTimeout(finish,380);
+  } else finish();
 }
 let calCap=3;
 /* fit the month grid to the window on wide screens; show as many tasks per day as fit */
@@ -824,7 +866,7 @@ function taskCalendar(all){
 function dayList(k){
   const list=visibleTasks().filter(x=>x.due&&iso(new Date(x.due))===k);
   openModal(`<h2>${esc(parseISO(k).toLocaleDateString(LOC,{weekday:"long",day:"numeric",month:"long"}))}</h2><div class="list">${list.map(taskCard).join("")}</div><div class="foot"><button class="pill" id="dClose">Close</button></div>`,
-    m=>{m.querySelector("#dClose").onclick=closeModal; m.addEventListener("click",e=>{const b=e.target.closest("[data-edittask]");if(b){closeModal();editTask(b.dataset.edittask)}const c=e.target.closest("[data-toggle]");if(c){const x=S.tasks.find(z=>z.id===c.dataset.toggle);x.done=!x.done;closeModal();render();dayList(k)}})});
+    m=>{m.querySelector("#dClose").onclick=closeModal; m.addEventListener("click",e=>{const b=e.target.closest("[data-edittask]");if(b){closeModal();editTask(b.dataset.edittask)}const c=e.target.closest("[data-toggle]");if(c){const x=S.tasks.find(z=>z.id===c.dataset.toggle),snap=snapshot();x.done=!x.done;closeModal();render();dayList(k);toast(x.done?"Done: “"+x.title+"”":"Back on your list: “"+x.title+"”",{undo:snap})}})});
 }
 function banner(){
   if(S.isExample) return `<div class="banner"><p><b>This is an example semester.</b> Look around, then connect your own university calendar or start with an empty one. Everything you add stays on this device.</p>
@@ -1006,13 +1048,16 @@ function editTask(id,onDay){
     <div class="field"><label for="tCourse">Course</label><select id="tCourse" class="inp">${courseOptions(t.course)}</select></div>
     <div class="row"><div class="field"><label for="tDate">Due date</label><input id="tDate" type="date" class="inp" value="${d?iso(d):""}"></div>
     <div class="field"><label for="tTime">Time</label><input id="tTime" type="time" class="inp" value="${d?pad(d.getHours())+":"+pad(d.getMinutes()):"23:59"}"></div></div>
+    <p class="datehint tnum" id="tWhen" aria-live="polite"></p>
     <label class="chk" style="margin-bottom:12px"><input type="checkbox" id="tTent" ${t.tentative?"checked":""}> The date is an estimate</label>
     <div class="field"><label for="tLink">Link (Moodle page)</label><input id="tLink" class="inp" type="url" value="${esc(t.link)}" placeholder="https://moodle…"></div>
     <div class="field"><label for="tNotes">Notes</label><textarea id="tNotes" class="inp" dir="auto">${esc(t.notes)}</textarea></div>
     <div class="foot">${id?`<button class="pill danger left" id="tDel">Delete</button>`:""}<button class="pill" id="tCancel">Cancel</button><button class="pill primary" id="tSave">Save</button></div>`,
   m=>{
     m.querySelector("#tCancel").onclick=closeModal;
-    if(id) twoStep(m.querySelector("#tDel"),"Tap again to delete",()=>{S.tasks=S.tasks.filter(x=>x.id!==id);closeModal();render();toast("Task deleted")});
+    const when=()=>{const ds=m.querySelector("#tDate").value,ts=m.querySelector("#tTime").value||"23:59";m.querySelector("#tWhen").textContent=ds?"Due "+longDate(parseISO(ds))+", "+ts:"No due date"};
+    m.querySelector("#tDate").addEventListener("input",when);m.querySelector("#tTime").addEventListener("input",when);when();
+    if(id) m.querySelector("#tDel").onclick=()=>{const snap=snapshot();S.tasks=S.tasks.filter(x=>x.id!==id);closeModal();render();toast("Deleted “"+t.title+"”",{undo:snap})};
     m.querySelector("#tSave").onclick=()=>{
       const title=m.querySelector("#tTitle").value.trim(); if(!title){m.querySelector("#tTitle").focus();return}
       const ds=m.querySelector("#tDate").value, ts=m.querySelector("#tTime").value||"23:59";
@@ -1052,9 +1097,10 @@ function editCourse(id){
   m.querySelector("#cAddSlot").onclick=()=>{const last=slots[slots.length-1];slots.push({id:uid(),course:id,weekday:last?last.weekday:0,start:"10:00",end:"11:45",kind:"Lecture",room:""});draw()};
   m.querySelector("#cSw").addEventListener("click",e=>{const b=e.target.closest(".sw");if(!b)return;color=b.dataset.c;m.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))});
   m.querySelector("#cCancel").onclick=closeModal;
+  const snapC=snapshot();
   if(id) twoStep(m.querySelector("#cDel"),"Also deletes its tasks. Tap again",()=>{
     S.courses=S.courses.filter(x=>x.id!==id);S.tasks=S.tasks.filter(t=>t.course!==id);S.slots=S.slots.filter(x=>x.course!==id);
-    if(S.ui.course===id)S.ui.course="all";closeModal();render();toast("Course deleted")});
+    if(S.ui.course===id)S.ui.course="all";closeModal();render();toast("Course deleted",{undo:snapC})});
   m.querySelector("#cSave").onclick=()=>{
     const name=m.querySelector("#cName").value.trim(); if(!name){m.querySelector("#cName").focus();return}
     const v={name,color,semester:m.querySelector("#cSem").value,archived:m.querySelector("#cArch").checked};
@@ -1424,7 +1470,7 @@ function renderSetup(){
   if(n===3){
     const s=sem();
     h+=`<h1>Your timetable</h1><p class="lead">Add when each course meets. Then the Lectures page shows your week and you can tick off what you’ve seen.</p>
-      <div class="osem"><div class="field" style="margin:0"><label for="oStart">Semester starts</label><input id="oStart" class="inp" type="date" value="${esc(s.start)}"></div>
+      <div class="osem"><div class="field" style="margin:0"><label for="oStart">Semester starts</label><input id="oStart" class="inp" type="date" value="${esc(s.start)}"><span class="datehint tnum" id="oStartHint">${s.start?esc(longDate(parseISO(s.start))):""}</span></div>
       <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
       <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on Israeli holidays</label></div><div class="olist">`;
     activeCourses().forEach(c=>{
@@ -1509,7 +1555,7 @@ function wireSetup(el,n){
     on("oDone",()=>finishSetup(true));
     const h=el.querySelector("#oHol"); if(h) h.onchange=()=>{ONB.hol=h.checked};
     const st=el.querySelector("#oStart"), wk=el.querySelector("#oWeeks");
-    if(st) st.onchange=()=>{sem().start=st.value}; if(wk) wk.onchange=()=>{sem().weeks=Math.max(1,Math.min(30,+wk.value||13))};
+    if(st) st.oninput=st.onchange=()=>{sem().start=st.value;const hh=el.querySelector("#oStartHint");if(hh)hh.textContent=st.value?longDate(parseISO(st.value)):""}; if(wk) wk.onchange=()=>{sem().weeks=Math.max(1,Math.min(30,+wk.value||13))};
     el.querySelectorAll("[data-addt]").forEach(b=>b.onclick=()=>{const rows=ONB.times[b.dataset.addt];const last=rows[rows.length-1];rows.push({id:uid(),weekday:last?last.weekday:0,start:last?last.start:"10:00",end:last?last.end:"11:45",kind:rows.length?"Tutorial":"Lecture",room:""});render()});
     el.querySelectorAll("[data-c]").forEach(g=>{const rows=ONB.times[g.dataset.c];
       g.querySelectorAll("[data-j]").forEach(r=>{const row=rows[+r.dataset.j];
@@ -1641,16 +1687,17 @@ $("#main").addEventListener("click",e=>{
   const cm=e.target.closest("[data-cm]"); if(cm){const n=+cm.dataset.cm,t=today();let [y,m]=(S.ui.calMonth||(t.getFullYear()+"-"+pad(t.getMonth()+1))).split("-").map(Number);if(n===0){y=t.getFullYear();m=t.getMonth()+1}else{m+=n;if(m<1){m=12;y--}if(m>12){m=1;y++}}S.ui.calMonth=y+"-"+pad(m);render();return}
   const dm=e.target.closest("[data-day]"); if(dm){dayList(dm.dataset.day);return}
   const b=e.target.closest("[data-act],[data-toggle],[data-edittask],[data-week],[data-lv],[data-seen]");
-  if(!b){const nd=e.target.closest("[data-newon]"); if(nd) editTask(null,nd.dataset.newon); return;}
+  if(!b){const nd=e.target.closest("[data-newon]"); if(nd){editTask(null,nd.dataset.newon);return}
+    const row=e.target.closest(".task[data-open]"); if(row&&!e.target.closest("a,button,input")) editTask(row.dataset.open); return;}
   if(b.dataset.act) return act(b.dataset.act);
-  if(b.dataset.toggle){const t=S.tasks.find(x=>x.id===b.dataset.toggle);t.done=!t.done;render();return}
+  if(b.dataset.toggle){toggleDone(b.dataset.toggle,b);return}
   if(b.dataset.edittask) return editTask(b.dataset.edittask);
   if(b.dataset.week) return moveWeek(+b.dataset.week);
   if(b.dataset.lv){S.ui.lecView=b.dataset.lv;render();return}
-  if(b.dataset.seen){const k=b.dataset.seen;if(S.seen[k])delete S.seen[k];else S.seen[k]=true;render();
+  if(b.dataset.seen){const k=b.dataset.seen,snap=snapshot();if(S.seen[k])delete S.seen[k];else S.seen[k]=true;render();toast(S.seen[k]?"Marked as seen":"Marked as not seen",{undo:snap});
     const el=document.querySelector(`[data-seen="${CSS.escape(k)}"]`);el&&el.focus();}
 });
-$("#main").addEventListener("keydown",e=>{const b=e.target.closest(".sess[data-seen]");if(b&&(e.key===" "||e.key==="Enter")&&e.target===b){e.preventDefault();b.click()}});
+$("#main").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches&&e.target.matches(".task[data-open]")){e.preventDefault();editTask(e.target.dataset.open);return}const b=e.target.closest(".sess[data-seen]");if(b&&(e.key===" "||e.key==="Enter")&&e.target===b){e.preventDefault();b.click()}});
 $("#main").addEventListener("change",e=>{if(e.target.id==="jump"){S.ui.week=+e.target.value;render()}});
 
 document.addEventListener("click",e=>{
