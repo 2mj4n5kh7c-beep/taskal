@@ -614,6 +614,51 @@ body.in-setup .syncbtn{display:none}
 
 .field.uni{max-width:420px}
 .field.uni .datehint{margin:6px 2px 0;display:block}
+
+/* side panel */
+.panel{position:fixed;top:76px;right:16px;bottom:16px;width:min(420px,calc(100vw - 32px));z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(16,24,40,.18);padding:16px 18px;overflow:auto;animation:pin .18s ease-out}
+@keyframes pin{from{transform:translateX(16px);opacity:0}}
+@media (prefers-reduced-motion: reduce){.panel{animation:none}}
+body.has-panel .shell{padding-right:440px}
+@media (max-width:1100px){body.has-panel .shell{padding-right:0}}
+@media (max-width:700px){.panel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:88vh;border-radius:16px 16px 0 0}}
+.panel .ph{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.panel .pdot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.panel .pc{font-size:13px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel .psaved{font-size:12px;color:var(--muted)}.panel .psaved.on{color:var(--ok)}
+.panel .icon-btn{width:30px;height:30px;background:transparent;border-color:transparent}
+.ptitle{width:100%;border:0;resize:none;overflow:hidden;font:600 19px/1.3 var(--font);color:var(--fg);background:transparent;padding:4px 0;margin:2px 0 10px;border-radius:6px}
+.ptitle:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px}
+.panel .prow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.panel .prow a.pill{text-decoration:none;color:var(--fg)}
+.panel .pfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+.panel .pfoot .hint{margin:0;font-size:12px}
+.task.sel{border-color:var(--accent)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+/* quick add */
+.qa{display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:0 12px;height:44px;border:1.5px dashed var(--line);border-radius:12px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.qa:focus-within{border-style:solid;border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent)}
+.qa-plus{color:var(--accent);font-weight:600;font-size:18px;width:24px;text-align:center}
+.qa input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:14px;color:var(--fg)}
+.qa:focus-within kbd{display:none}
+.qa-prev{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 4px 0;font-size:12.5px;color:var(--muted)}
+.qa-prev>span{padding:3px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.qa-prev .qa-t{color:var(--fg);font-weight:500}
+.qa-prev .qa-c{display:inline-flex;align-items:center;gap:6px}.qa-prev .qa-c i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.qa-prev .qa-d{color:var(--fg)}
+.qa-prev .qa-n{border-style:dashed}
+.qa-prev .qa-k{border:0;background:transparent;margin-left:auto}
+.task.fresh{animation:fresh 1.4s ease-out}
+@keyframes fresh{0%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}100%{box-shadow:var(--shadow)}}
+
+.banner{padding-right:44px!important}
+.ttlist{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+.ttrow{display:grid;grid-template-columns:120px minmax(0,1fr) 200px;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:10px}
+.ttrow .ttwhen{font-size:13px;color:var(--muted)}.ttrow .ttname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.ttrow .kind{font-style:normal;font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:4px}
+.ttrow select{height:32px;padding:0 6px}
+@media (max-width:640px){.ttrow{grid-template-columns:1fr}}
+.ttcta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:14px 0 10px;border-radius:12px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
+.ttcta b{display:block;font-weight:600;font-size:14px}.ttcta span{font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -643,6 +688,7 @@ body.in-setup .syncbtn{display:none}
         <button data-act="semesters" type="button">Semesters &amp; holidays…</button>
         <button data-act="reminders" type="button">Reminders…</button>
         <button data-act="newcourse" type="button">New course…</button>
+        <button data-act="timetable" type="button">Import timetable…</button>
         <div class="mh">Your data</div>
         <button data-act="backup" type="button">Save a backup file</button>
         <button data-act="autobackups" type="button">Automatic backups…</button>
@@ -671,6 +717,7 @@ body.in-setup .syncbtn{display:none}
   <main class="main" id="main"></main>
 </div>
 <section id="setup" class="setup" hidden></section>
+<aside id="panel" class="panel" hidden aria-label="Task details"></aside>
 <input type="file" id="fileIcs" accept=".ics,text/calendar" hidden>
 <input type="file" id="fileJson" accept=".json,application/json" hidden>
 
@@ -937,10 +984,11 @@ function renderTasks(){
   const done=all.filter(t=>t.done).sort((a,b)=>Date.parse(b.due||0)-Date.parse(a.due||0));
   let h=banner();
   {const oc=open.length, cn=S.ui.course==="all"?"All courses":((course(S.ui.course)||{}).name||"Tasks");
-  h+=`<div class="viewbar"><div class="vh"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><button class="pill primary sm" data-act="addtask" title="New task (N)">+ Task</button></div><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;
+  h+=`<div class="viewbar"><div class="vh"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><button class="pill primary sm" data-act="addtask" title="New task with all the details">+ Task</button></div><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;
   h+=`<div class="findbar"><label class="search">${I.search}<input id="q" type="search" placeholder="Search tasks" value="${esc(S.ui.q||"")}" aria-label="Search tasks" autocomplete="off" dir="auto"><kbd aria-hidden="true">/</kbd></label>
     <div class="chips" role="group" aria-label="Filter">${FILTERS.map(([k,l])=>`<button type="button" class="chip" data-filter="${k}" aria-pressed="${S.ui.filter===k}">${l}</button>`).join("")}</div>
     ${S.ui.taskView!=="calendar"?`<button type="button" class="linkbtn dens" data-act="density" title="Change row size">${S.ui.density==="comfortable"?"Compact rows":"Roomy rows"}</button>`:""}</div>`;}
+  if(S.ui.taskView!=="calendar") h+=quickAddHtml();
   if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); fitCal(); keepSearchFocus(); return; }
   if(!all.length&&narrowing&&base.length){
     h+=`<div class="empty glass"><strong>Nothing matches${S.ui.q?` “${esc(S.ui.q)}”`:""}</strong>Try other words, or clear the search and filters.<div style="margin-top:14px"><button class="pill" data-act="clearfind">Clear search</button></div></div>`;
@@ -955,9 +1003,46 @@ function renderTasks(){
     h+=`<div class="section-h"><h2>Done</h2><span class="n tnum">${done.length}</span><button class="pill" style="margin-left:auto;padding:4px 12px;font-size:12px" data-act="toggledone">${S.ui.showDone?"Hide":"Show"}</button></div>`;
     if(S.ui.showDone||narrowing) h+=`<div class="list">${done.map(taskCard).join("")}</div>`;
   }
-  $("#main").innerHTML=h; keepSearchFocus();
+  $("#main").innerHTML=h; keepSearchFocus(); markSel(); keepQuickAdd();
 }
-let qHadFocus=false, qCaret=0;
+let qHadFocus=false, qCaret=0, qaText="", qaFocus=false;
+const WDN={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,weds:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6};
+/* "Quiz mechanics tue 10:00" -> title Quiz, course Classical Mechanics, next Tuesday 10:00 */
+function parseQuick(text){
+  let words=text.trim().split(/\s+/).filter(Boolean), course_="", date=null, time="", used=new Set();
+  const t0=today();
+  words.forEach((w,i)=>{
+    const lw=w.toLowerCase().replace(/[,.]$/,"");
+    let m;
+    if(!date&&(lw==="today"||lw==="היום")){date=t0;used.add(i);return}
+    if(!date&&(lw==="tomorrow"||lw==="tmrw"||lw==="מחר")){date=addDays(t0,1);used.add(i);return}
+    const wd=WDN[lw]??-1;
+    if(!date&&wd>=0){let n=(wd-t0.getDay()+7)%7; if(n===0) n=7; date=addDays(t0,n); used.add(i); return}
+    if(!date&&(m=lw.match(/^(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?$/))){let y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):t0.getFullYear(); let d=new Date(y,+m[2]-1,+m[1]); if(!m[3]&&d<addDays(t0,-60)) d=new Date(y+1,+m[2]-1,+m[1]); date=d; used.add(i); return}
+    if(!date&&lw==="in"&&words[i+1]&&/^\d+$/.test(words[i+1])&&/^(days?|weeks?|wks?)$/i.test(words[i+2]||"")){const n=+words[i+1]*(/^w/i.test(words[i+2])?7:1); date=addDays(t0,n); used.add(i);used.add(i+1);used.add(i+2); return}
+    if(!time&&(m=lw.match(/^(?:at)?(\d{1,2}):(\d{2})$/))){time=pad(+m[1])+":"+m[2]; used.add(i); return}
+    if(!time&&(m=lw.match(/^(\d{1,2})(am|pm)$/))){let h=+m[1]%12+(m[2]==="pm"?12:0); time=pad(h)+":00"; used.add(i); return}
+    if(lw==="at"&&words[i+1]&&/^\d{1,2}(:\d{2})?$/.test(words[i+1])){used.add(i);return}
+  });
+  if(!time) words.forEach((w,i)=>{if(!used.has(i)&&used.has(i-1)&&words[i-1].toLowerCase()==="at"&&/^\d{1,2}$/.test(w)){time=pad(+w)+":00";used.add(i)}});
+  // course: a word that starts a course's name, or its course number
+  const act=activeCourses(); let best=null;
+  words.forEach((w,i)=>{ if(used.has(i)) return; const lw=w.toLowerCase(); if(lw.length<3) return;
+    act.forEach(c=>{const nm=c.name.toLowerCase(), parts=nm.split(/[\s\-–:,()]+/);
+      const hit=(/^\d{3,}$/.test(lw)&&nm.includes(lw))||parts.some(p=>p.length>=3&&p.startsWith(lw));
+      if(hit&&(!best||lw.length>best.len)) best={c,i,len:lw.length};});});
+  if(best){course_=best.c.id;used.add(best.i)}
+  const title=words.filter((w,i)=>!used.has(i)).join(" ").replace(/\s+(due|on|by)$/i,"").trim();
+  let due=""; if(date){const d=new Date(date);const [hh,mm]=(time||"23:59").split(":").map(Number);d.setHours(hh,mm,0,0);due=d.toISOString()}
+  else if(time){const d=today();const [hh,mm]=time.split(":").map(Number);d.setHours(hh,mm,0,0);if(d<new Date())d.setDate(d.getDate()+1);due=d.toISOString()}
+  return {title,course:course_||(S.ui.course!=="all"?S.ui.course:""),due};
+}
+function quickAddHtml(){
+  const q=parseQuick(qaText), c=course(q.course), d=q.due?new Date(q.due):null;
+  const prev=qaText.trim()?`<div class="qa-prev" aria-live="polite"><span class="qa-t" dir="auto">${esc(q.title||"(no title yet)")}</span>${c?`<span class="qa-c"><i style="--c:${esc(c.color)}"></i><span dir="auto">${esc(c.name)}</span></span>`:`<span class="qa-n">no course</span>`}<span class="${d?"qa-d":"qa-n"}">${d?esc(d.toLocaleDateString(LOC,{weekday:"short",day:"numeric",month:"short"}))+" "+pad(d.getHours())+":"+pad(d.getMinutes()):"no date"}</span><span class="qa-k">Enter to add</span></div>`:"";
+  return `<div class="qa"><span class="qa-plus" aria-hidden="true">+</span><input id="qa" placeholder="Add a task… e.g. “Quiz mechanics tue 10:00”" value="${esc(qaText)}" aria-label="Quick add a task" autocomplete="off" dir="auto"><kbd aria-hidden="true">N</kbd></div>${prev}`;
+}
+function keepQuickAdd(){const q=$("#qa"); if(q&&qaFocus){q.focus();q.setSelectionRange(q.value.length,q.value.length)} qaFocus=false;}
 function keepSearchFocus(){const q=$("#q"); if(q&&qHadFocus){q.focus();try{q.setSelectionRange(qCaret,qCaret)}catch(e){}} qHadFocus=false;}
 /* tick a task: show the check, let the row fade out, then move it; Undo puts it back */
 function toggleDone(id,btn){
@@ -1049,7 +1134,7 @@ function renderLectures(){
     h+=`<div class="chips" aria-label="Lectures seen so far">${courses.map(c=>{const p=progress(s,c.id);const behind=p.held-p.seen;return `<span class="chip" style="--c:${esc(c.color)}"><span class="dot" style="--c:${esc(c.color)}"></span><span dir="auto">${esc(c.name)}</span><b class="tnum ${behind?"behind":"ok"}">${p.seen}/${p.held}</b></span>`}).join("")}</div>`;
   }
   if(!slots.length){
-    h+=`<div class="empty glass"><strong>No lecture times yet</strong>Open a course and add its weekly lectures and tutorials. They repeat every week of the semester.<div style="margin-top:14px"><button class="pill primary" data-act="${courses.length?"editfirst":"newcourse"}">${courses.length?"Add lecture times":"Add a course"}</button></div></div>`;
+    h+=`<div class="empty glass"><strong>No lecture times yet</strong>Open a course and add its weekly lectures and tutorials. They repeat every week of the semester.<div style="margin-top:14px"><button class="pill primary" data-act="timetable">Import my timetable</button> <button class="pill" data-act="${courses.length?"editfirst":"newcourse"}">${courses.length?"Type the times":"Add a course"}</button></div></div>`;
     $("#main").innerHTML=h; return;
   }
   if(S.ui.lecView==="week"&&innerWidth>820){
@@ -1175,7 +1260,7 @@ document.addEventListener("keydown",e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"&&!modalEl&&!S.setup){e.preventDefault();focusSearch();return}
   if(e.key==="Escape"&&document.activeElement.id==="q"){S.ui.q="";S.ui.filter=null;render();document.activeElement.blur&&document.activeElement.blur();return}
   if(!modalEl&&!S.setup&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&shortcut(e)){e.preventDefault();return}
-  if(e.key==="Escape"){ if(modalEl) closeModal(); else hideMenu(); }
+  if(e.key==="Escape"){ if(modalEl) closeModal(); else if(panelId) closePanel(); else hideMenu(); }
   if(!modalEl&&S.ui.mode==="lectures"&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){
     if(e.key==="ArrowLeft") moveWeek(-1); if(e.key==="ArrowRight") moveWeek(1);
   }
@@ -1185,7 +1270,7 @@ function rowsNow(){return [...document.querySelectorAll("#main .task[data-open]"
 function shortcut(e){
   const k=e.key, rows=rowsNow(), cur=document.activeElement.closest?document.activeElement.closest(".task[data-open]"):null;
   if(k==="/"){focusSearch();return true}
-  if(k==="n"||k==="N"){if(S.ui.mode==="tasks"){editTask(null);return true}return false}
+  if(k==="n"||k==="N"){if(S.ui.mode!=="tasks"){S.ui.mode="tasks";render()} if(S.ui.taskView==="calendar"){editTask(null);return true} const q=$("#qa"); if(q){q.focus()} else editTask(null); return true}
   if(k==="t"||k==="T"){S.ui.mode="tasks";render();return true}
   if(k==="l"||k==="L"){S.ui.mode="lectures";render();return true}
   if(k==="s"||k==="S"){syncFromButton();return true}
@@ -1200,7 +1285,7 @@ function shortcut(e){
 }
 function showShortcuts(){
   const MOD=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)?"⌘ K":"Ctrl K";
-  const L=[["N","New task"],["/  or  "+MOD,"Search tasks"],["J / K","Move down / up the list"],["X","Mark the selected task done"],["E  or  Enter","Open the selected task"],["T / L","Tasks / Lectures"],["← / →","Previous / next week (Lectures)"],["S","Sync your calendar now"],["Esc","Close, or clear the search"],["?","This list"]];
+  const L=[["N","Quick add a task"],["/  or  "+MOD,"Search tasks"],["J / K","Move down / up the list"],["X","Mark the selected task done"],["E  or  Enter","Open the selected task"],["T / L","Tasks / Lectures"],["← / →","Previous / next week (Lectures)"],["S","Sync your calendar now"],["Esc","Close, or clear the search"],["?","This list"]];
   openModal(`<h2>Keyboard shortcuts</h2><table class="keys">${L.map(([k,d])=>`<tr><td>${k.split("  or  ").map(x=>`<kbd>${esc(x)}</kbd>`).join(" or ")}</td><td>${esc(d)}</td></tr>`).join("")}</table><div class="foot"><button class="pill primary" id="kOk">Got it</button></div>`,m=>{m.querySelector("#kOk").onclick=closeModal});
 }
 /* a button that waits on something: spinner + verb, same width, can't be pressed twice */
@@ -1217,7 +1302,49 @@ function twoStep(btn,label,fn){
 const courseOptions=sel=>`<option value="">No course</option>`+S.courses.filter(c=>!c.archived||c.id===sel).map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""}>${esc(c.name)}</option>`).join("");
 
 /* ---------- task editor ---------- */
-function editTask(id,onDay){
+let panelId=null, panelTimer=null;
+function editTask(id,onDay){ if(id&&S.tasks.some(x=>x.id===id)) return openPanel(id); return editTaskModal(id,onDay); }
+function closePanel(){ if(!panelId) return; flushPanel(); panelId=null; const p=$("#panel"); p.hidden=true; p.innerHTML=""; document.body.classList.remove("has-panel"); document.querySelectorAll(".task.sel").forEach(x=>x.classList.remove("sel")); }
+function flushPanel(){ if(panelTimer){clearTimeout(panelTimer);panelTimer=null;readPanel();} }
+function readPanel(){
+  const p=$("#panel"), t=S.tasks.find(x=>x.id===panelId); if(!t||!p.querySelector("#pTitle")) return;
+  const title=p.querySelector("#pTitle").value.trim(); if(title) t.title=title;
+  t.course=p.querySelector("#pCourse").value;
+  const ds=p.querySelector("#pDate").value, ts=p.querySelector("#pTime").value||"23:59";
+  if(ds){const x=parseISO(ds);const [hh,mm]=ts.split(":").map(Number);x.setHours(hh,mm,0,0);t.due=x.toISOString()} else t.due="";
+  t.tentative=p.querySelector("#pTent").checked; t.link=p.querySelector("#pLink").value.trim(); t.notes=p.querySelector("#pNotes").value.trim();
+  p.querySelector("#pWhen").textContent=ds?"Due "+longDate(parseISO(ds))+", "+ts:"No due date";
+  p.querySelector("#pSaved").textContent="Saved"; p.querySelector("#pSaved").classList.add("on");
+  render(); markSel();
+}
+function markSel(){document.querySelectorAll(".task.sel").forEach(x=>x.classList.remove("sel")); if(panelId){const r=document.querySelector(`.task[data-open="${CSS.escape(panelId)}"]`); r&&r.classList.add("sel")}}
+function openPanel(id){
+  flushPanel(); const t=S.tasks.find(x=>x.id===id); if(!t) return; panelId=id;
+  const d=t.due?new Date(t.due):null, link=t.link||firstUrl(t.notes), c=course(t.course);
+  const p=$("#panel");
+  p.innerHTML=`<div class="ph"><span class="pdot" style="--c:${esc(colorOf(t.course))}"></span><span class="pc" dir="auto">${c?esc(c.name):"No course"}</span><span class="psaved" id="pSaved" aria-live="polite"></span><button class="icon-btn" id="pClose" aria-label="Close (Esc)" title="Close (Esc)">${I.x}</button></div>
+    <textarea id="pTitle" class="ptitle" dir="auto" rows="1" aria-label="Title">${esc(t.title)}</textarea>
+    <div class="prow"><button class="pill ${t.done?"":"primary"}" id="pDone">${t.done?"Mark as not done":I.check+" Mark as done"}</button>${link?`<a class="pill" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}</div>
+    <div class="field"><label for="pCourse">Course</label><select id="pCourse" class="inp">${courseOptions(t.course)}</select></div>
+    <div class="row"><div class="field"><label for="pDate">Due date</label><input id="pDate" type="date" class="inp" value="${d?iso(d):""}"></div>
+    <div class="field"><label for="pTime">Time</label><input id="pTime" type="time" class="inp" value="${d?pad(d.getHours())+":"+pad(d.getMinutes()):"23:59"}"></div></div>
+    <p class="datehint tnum" id="pWhen">${d?"Due "+esc(longDate(d))+", "+pad(d.getHours())+":"+pad(d.getMinutes()):"No due date"}</p>
+    ${recentChange(t)==="moved"?`<p class="datehint">Moodle moved this deadline. It was ${esc(new Date(t.chg.from).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}))}.</p>`:""}
+    <label class="chk" style="margin-bottom:12px"><input type="checkbox" id="pTent" ${t.tentative?"checked":""}> The date is an estimate</label>
+    <div class="field"><label for="pLink">Link</label><input id="pLink" class="inp" type="url" value="${esc(t.link)}" placeholder="https://moodle…"></div>
+    <div class="field"><label for="pNotes">Notes</label><textarea id="pNotes" class="inp" dir="auto" rows="6">${esc(t.notes)}</textarea></div>
+    <div class="pfoot"><button class="pill danger" id="pDel">Delete task</button><span class="hint">Changes save as you type.</span></div>`;
+  p.hidden=false; document.body.classList.add("has-panel"); markSel();
+  const ta=p.querySelector("#pTitle"), grow=()=>{ta.style.height="auto";ta.style.height=ta.scrollHeight+"px"}; grow();
+  const later=()=>{p.querySelector("#pSaved").textContent="Saving…";p.querySelector("#pSaved").classList.remove("on");clearTimeout(panelTimer);panelTimer=setTimeout(()=>{panelTimer=null;readPanel()},450)};
+  p.querySelectorAll("input,textarea,select").forEach(x=>{x.addEventListener("input",later);x.addEventListener("change",later)});
+  ta.addEventListener("input",grow); ta.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ta.blur()}});
+  p.querySelector("#pClose").onclick=closePanel;
+  p.querySelector("#pDone").onclick=()=>{flushPanel();const snap=snapshot();t.done=!t.done;render();openPanel(id);toast(t.done?"Done: “"+t.title+"”":"Back on your list: “"+t.title+"”",{undo:snap})};
+  p.querySelector("#pDel").onclick=()=>{const snap=snapshot();panelTimer=null;S.tasks=S.tasks.filter(x=>x.id!==id);panelId=null;closePanel();render();toast("Deleted “"+t.title+"”",{undo:snap})};
+  ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length);
+}
+function editTaskModal(id,onDay){
   const t=id?S.tasks.find(x=>x.id===id):{id:null,title:"",course:S.ui.course!=="all"?S.ui.course:"",due:onDay?(()=>{const d=parseISO(onDay);d.setHours(23,59,0,0);return d.toISOString()})():"",notes:"",link:"",tentative:false,done:false};
   const d=t.due?new Date(t.due):null;
   openModal(`<h2>${id?"Edit task":"New task"}</h2>
@@ -1522,6 +1649,75 @@ function openImport(){
 }
 
 /* ---------- note editor ---------- */
+/* ---------- timetable import: weekly meetings from a calendar file or pasted text ---------- */
+const HEB_DAYS={"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"א":0,"ב":1,"ג":2,"ד":3,"ה":4,"ו":5};
+const kindOf=t=>/תרגול|תרגיל|tutorial|recitation|exercise|\btirgul\b/i.test(t)?"Tutorial":/מעבדה|\blab\b/i.test(t)?"Lab":"Lecture";
+const tm=x=>{const m=String(x).match(/(\d{1,2})[:.](\d{2})/);return m?pad(+m[1])+":"+m[2]:""};
+function parseTimetable(text){
+  const out=[], key=r=>[norm(r.name),r.weekday,r.start,r.end].join("|"), seen=new Map();
+  if(/BEGIN:VCALENDAR/.test(text)){
+    parseIcs(text).forEach(ev=>{const a=ev.DTSTART,b=ev.DTEND; if(!a||!b) return; const mins=(b-a)/6e4; if(mins<=0||mins>6*60) return;
+      const name=cleanTitle(ev.SUMMARY||"").replace(/\s*[-–]\s*(lecture|tutorial|lab|הרצאה|תרגול|מעבדה)\s*$/i,"").trim()||"Untitled";
+      const r={name,weekday:a.getDay(),start:pad(a.getHours())+":"+pad(a.getMinutes()),end:pad(b.getHours())+":"+pad(b.getMinutes()),kind:kindOf(ev.SUMMARY||""),room:(ev.LOCATION||"").trim(),weekly:/FREQ=WEEKLY/i.test(ev.RRULE||"")};
+      const k=key(r); if(seen.has(k)){seen.get(k).n++} else {r.n=1;seen.set(k,r)}});
+    seen.forEach(r=>{if(r.weekly||r.n>=2) out.push(r)});
+    if(!out.length) seen.forEach(r=>out.push(r)); // a single week's timetable
+  } else {
+    text.split(/\n+/).forEach(line=>{
+      const L=line.trim(); if(!L) return;
+      const times=L.match(/(\d{1,2}[:.]\d{2})\s*[-–—]\s*(\d{1,2}[:.]\d{2})/); if(!times) return;
+      let wd=-1; const lw=L.toLowerCase();
+      for(const [k,v] of Object.entries(WDN)){ if(new RegExp("(^|[^a-z])"+k+"([^a-z]|$)").test(lw)){wd=v;break} }
+      if(wd<0) for(const [k,v] of Object.entries(HEB_DAYS)){ if(new RegExp("(^|[\\s,(])(יום\\s+)?"+k+"['׳]?([\\s,)]|$)").test(L)){wd=v;break} }
+      if(wd<0) return;
+      let name=L.replace(times[0],"").replace(/\b(sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(day|nesday|rsday|urday)?\b/i,"").replace(/(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי)/,"").replace(/(יום\s+)?(^|\s)[אבגדהו]['׳](?=\s|$)/,"").replace(/[|,;\t]+/g," ").replace(/\s+/g," ").trim();
+      const room=(name.match(/\b(room|חדר)\s+([\w\u0590-\u05FF.\- ]+)$/i)||[])[2]||""; if(room) name=name.replace(/\b(room|חדר)\s+.+$/i,"").trim();
+      const r={name:name||"Untitled",weekday:wd,start:tm(times[1]),end:tm(times[2]),kind:kindOf(L),room};
+      if(!seen.has(key(r))){seen.set(key(r),r);out.push(r)}
+    });
+  }
+  return out.sort((a,b)=>a.weekday-b.weekday||a.start.localeCompare(b.start));
+}
+function guessCourseFor(name){
+  const n=name.toLowerCase(), num=(name.match(/\b\d{4,6}\b/)||[])[0], act=activeCourses();
+  if(num){const c=act.find(c=>c.name.includes(num)||(c.moodle||"").includes(num)); if(c) return c.id}
+  let best=null,score=0; act.forEach(c=>{const ws=c.name.toLowerCase().split(/[\s\-–:,()]+/).filter(w=>w.length>=3&&!/^\d+$/.test(w));
+    const sc=ws.filter(w=>n.includes(w)).length/(ws.length||1); if(sc>score){score=sc;best=c}});
+  return score>=.5?best.id:"";
+}
+function importTimetable(){
+  let rows=[];
+  const m=openModal(`<h2>Import your timetable</h2><p class="hint">Use a calendar file of your weekly classes, or paste your timetable as text (one class per line, like “Sun 10:00–11:45 Classical Mechanics”). Taskal finds the weekly times; you check them before anything is added.</p>
+    <div class="row" style="gap:8px;margin-bottom:10px"><button class="pill" id="ttFile">Choose a calendar file (.ics)</button></div>
+    <div class="field"><label for="ttText">Or paste your timetable</label><textarea id="ttText" class="inp" dir="auto" rows="5" placeholder="Sun 10:00-11:45 Classical Mechanics, room 105&#10;יום ב' 14:00-15:45 תרגול מכניקה"></textarea></div>
+    <div id="ttRes"></div>
+    <div class="foot"><button class="pill" id="ttCancel">Cancel</button><button class="pill primary" id="ttGo" disabled>Add times</button></div>`,
+  m=>{
+    const res=m.querySelector("#ttRes"), go=m.querySelector("#ttGo");
+    const draw=()=>{
+      if(!rows.length){res.innerHTML=m.querySelector("#ttText").value.trim()?`<div class="result err">No weekly times found yet. Each line needs a day and a time like 10:00-11:45.</div>`:"";go.disabled=true;return}
+      const opts=sel=>`<option value="">Skip this one</option><option value="__new" ${sel==="__new"?"selected":""}>Add as a new course</option>`+activeCourses().map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""}>${esc(c.name)}</option>`).join("");
+      res.innerHTML=`<p class="lab" style="margin:10px 0 6px">Found ${rows.length} weekly time${rows.length===1?"":"s"}</p><div class="ttlist">${rows.map((r,i)=>`<div class="ttrow"><span class="tnum ttwhen">${DAYS[r.weekday]} ${esc(r.start)}–${esc(r.end)}</span><span class="ttname" dir="auto" title="${esc(r.name)}">${esc(r.name)}${r.kind!=="Lecture"?` <i class="kind">${r.kind}</i>`:""}</span><select class="inp" data-tt="${i}" aria-label="Course for ${esc(r.name)}">${opts(r.course)}</select></div>`).join("")}</div>`;
+      go.disabled=!rows.some(r=>r.course); go.textContent=`Add ${rows.filter(r=>r.course).length} time${rows.filter(r=>r.course).length===1?"":"s"}`;
+      res.querySelectorAll("[data-tt]").forEach(x=>x.onchange=()=>{rows[+x.dataset.tt].course=x.value;draw()});
+    };
+    const load=text=>{rows=parseTimetable(text);rows.forEach(r=>r.course=guessCourseFor(r.name)||"__new");draw()};
+    m.querySelector("#ttText").addEventListener("input",e=>load(e.target.value));
+    m.querySelector("#ttFile").onclick=()=>{const f=$("#fileIcs");f.value="";f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();r.onload=()=>load(String(r.result));r.readAsText(file)};f.click()};
+    m.querySelector("#ttCancel").onclick=closeModal;
+    go.onclick=()=>{
+      const snap=snapshot(), made={}; let n=0;
+      rows.filter(r=>r.course).forEach(r=>{
+        let cid=r.course;
+        if(cid==="__new"){const k=norm(r.name); if(!made[k]){const c={id:uid(),name:r.name,color:COLORS[S.courses.length%COLORS.length].c,semester:S.activeSemester,archived:false};S.courses.push(c);made[k]=c.id} cid=made[k]}
+        const slot={id:uid(),course:cid,weekday:r.weekday,start:r.start,end:r.end,kind:r.kind,room:r.room};
+        if(S.setup===3){const L=ONB.times[cid]||(ONB.times[cid]=[]); if(!L.some(x=>+x.weekday===slot.weekday&&x.start===slot.start)) {L.push(slot);n++}}
+        else if(!S.slots.some(x=>x.course===cid&&+x.weekday===slot.weekday&&x.start===slot.start)){S.slots.push(slot);n++}
+      });
+      closeModal(); render(); toast(`Added ${n} weekly time${n===1?"":"s"}`,{undo:snap});
+    };
+  });
+}
 function editNote(k){
   const [sid,date]=k.split("@"); const sl=S.slots.find(x=>x.id===sid); const c=course(sl.course);
   openModal(`<h2>Note</h2><p class="hint" dir="auto">${esc(c.name)} · ${DAYS_LONG[sl.weekday]} ${fmtDay(parseISO(date))} · ${esc(sl.start)}–${esc(sl.end)}</p>
@@ -1719,7 +1915,8 @@ function renderSetup(){
     h+=`<h1>Your timetable</h1><p class="lead">Add when each course meets. Then the Lectures page shows your week and you can tick off what you’ve seen.</p>
       <div class="osem"><div class="field" style="margin:0"><label for="oStart">Semester starts</label><input id="oStart" class="inp" type="date" value="${esc(s.start)}"><span class="datehint tnum" id="oStartHint">${s.start?esc(longDate(parseISO(s.start))):""}</span></div>
       <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
-      <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on Israeli holidays</label></div><div class="olist">`;
+      <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on Israeli holidays</label></div>
+      <div class="ttcta"><div><b>Have your timetable as a file or text?</b><span>Import it instead of typing each time.</span></div><button class="pill primary" id="oTT">Import my timetable</button></div><div class="olist">`;
     activeCourses().forEach(c=>{
       const rows=ONB.times[c.id]||(ONB.times[c.id]=S.slots.filter(x=>x.course===c.id).map(x=>Object.assign({},x)));
       h+=`<div class="ogroup" data-c="${esc(c.id)}"><div class="ogh"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b></div>
@@ -1801,6 +1998,7 @@ function wireSetup(el,n){
   if(n===3){
     on("oBack",()=>{S.setup=2;render()});
     on("oLater",()=>finishSetup(false));
+    on("oTT",importTimetable);
     on("oDone",()=>finishSetup(true));
     const h=el.querySelector("#oHol"); if(h) h.onchange=()=>{ONB.hol=h.checked};
     const st=el.querySelector("#oStart"), wk=el.querySelector("#oWeeks");
@@ -1903,6 +2101,7 @@ function act(a){
   else if(a==="toggledone"){S.ui.showDone=!S.ui.showDone;render()}
   else if(a==="hideexample"){S.ui.hideExample=true;render();toast("Hidden. You can start fresh any time from the ⋯ menu.")}
   else if(a==="autobackups") showAutoBackups();
+  else if(a==="timetable") importTimetable();
   else if(a==="clearfind"){S.ui.q="";S.ui.filter=null;render()}
   else if(a==="density"){S.ui.density=S.ui.density==="comfortable"?"compact":"comfortable";render()}
   else if(a==="shortcuts") showShortcuts();
@@ -1957,7 +2156,14 @@ $("#main").addEventListener("click",e=>{
     const el=document.querySelector(`[data-seen="${CSS.escape(k)}"]`);el&&el.focus();}
 });
 $("#main").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches&&e.target.matches(".task[data-open]")){e.preventDefault();editTask(e.target.dataset.open);return}const b=e.target.closest(".sess[data-seen]");if(b&&(e.key===" "||e.key==="Enter")&&e.target===b){e.preventDefault();b.click()}});
-$("#main").addEventListener("input",e=>{if(e.target.id==="q"){S.ui.q=e.target.value;qHadFocus=true;qCaret=e.target.selectionStart;render()}});
+$("#main").addEventListener("keydown",e=>{
+  if(e.target.id!=="qa") return;
+  if(e.key==="Escape"){qaText="";e.target.blur();render();return}
+  if(e.key==="Enter"){e.preventDefault(); const q=parseQuick(qaText); if(!q.title) return;
+    const nt={id:uid(),done:false,title:q.title,course:q.course,due:q.due,notes:"",link:"",tentative:false}; const snap=snapshot(); S.tasks.push(nt); qaText=""; qaFocus=true; render();
+    toast("Added “"+nt.title+"”",{undo:snap}); const r=document.querySelector(`.task[data-open="${CSS.escape(nt.id)}"]`); if(r){r.classList.add("fresh");r.scrollIntoView({block:"nearest"})}}
+});
+$("#main").addEventListener("input",e=>{if(e.target.id==="qa"){qaText=e.target.value;qaFocus=true;render();return}if(e.target.id==="q"){S.ui.q=e.target.value;qHadFocus=true;qCaret=e.target.selectionStart;render()}});
 $("#main").addEventListener("change",e=>{if(e.target.id==="jump"){S.ui.week=+e.target.value;render()}});
 
 document.addEventListener("click",e=>{
