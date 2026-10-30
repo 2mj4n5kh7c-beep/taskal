@@ -1,6 +1,6 @@
 [package]
 name = "taskal"
-version = "2.0.0"
+version = "2.0.1"
 description = "Taskal: university tasks and lecture tracker"
 edition = "2021"
 
