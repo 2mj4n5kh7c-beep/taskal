@@ -505,6 +505,60 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
 .datehint{margin:-4px 0 12px;font-size:12.5px;color:var(--muted)}
 .osem .datehint{display:block;margin:6px 2px 0}
 @media (prefers-reduced-motion: reduce){.task[data-open]{transition:none}}
+
+/* Taskal 2, round 2: contrast, compact rows, search, sync button, shortcuts, setup choices */
+.task .notes,.section-h .n,.side h3,.synccard h3{color:var(--muted)}
+.task .acts a,.task .acts button{color:var(--muted)}
+body.compact .task{padding:8px 12px 8px 12px;align-items:center;gap:10px}
+body.compact .task::before{top:8px;bottom:8px}
+body.compact .task>div{display:flex;align-items:center;gap:14px;min-width:0}
+body.compact .task .t{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+body.compact .task .meta{flex:none;flex-wrap:nowrap;white-space:nowrap;margin:0}
+body.compact .task .meta>span[dir="auto"]{max-width:170px;overflow:hidden;text-overflow:ellipsis}
+body.compact .task .notes{display:none}
+body.compact .task .check{margin-top:0}
+body.compact .task .acts button{width:28px;height:28px}
+body.compact .list{gap:6px}
+.hasnote{display:none;color:var(--muted)}
+body.compact .hasnote{display:inline-flex}
+@media (max-width:700px){body.compact .task>div{flex-direction:column;align-items:flex-start;gap:2px}body.compact .task .t{width:100%}body.compact .task .meta{flex-wrap:wrap;white-space:normal}}
+.badge.chg{border-style:solid;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.findbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 4px 2px}
+.search{display:flex;align-items:center;gap:8px;flex:1 1 220px;max-width:340px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted)}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:14px;color:var(--fg)}
+.search input::-webkit-search-cancel-button{cursor:pointer}
+kbd{font:500 11px/1 var(--font);padding:3px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;color:var(--muted);background:var(--surface-2)}
+.search:focus-within kbd{display:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-size:13px;cursor:pointer}
+.chip:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.findbar .dens{margin-left:auto;font-size:12.5px}
+.syncbtn{position:relative;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);color:#fff}
+.syncbtn:hover{background:rgba(255,255,255,.18)}
+.syncbtn:disabled{opacity:1;cursor:progress}
+.syncbtn.spinning .sync-ic{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.syncbtn .sync-dot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--danger);border:2px solid #1f3a63;display:none}
+.syncbtn.failed .sync-dot{display:block}
+@media (prefers-reduced-motion: reduce){.syncbtn.spinning .sync-ic{animation:none;opacity:.6}}
+.task[data-open]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+table.keys{width:100%;border-collapse:collapse;margin:4px 0 8px}
+table.keys td{padding:7px 4px;border-bottom:1px solid var(--line);font-size:14px}
+table.keys td:first-child{white-space:nowrap;width:44%}
+.menu kbd{margin-left:6px}
+.srcs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 16px}
+.src{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font:inherit;color:var(--fg);cursor:pointer}
+.src b{font-weight:600;font-size:14px}.src small{color:var(--muted);font-size:12.5px;line-height:1.35}
+.src:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.src[aria-checked="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--surface));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.srcbox{padding:4px 0 8px}
+@media (max-width:640px){.srcs{grid-template-columns:1fr}}
+
+.findbar .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
+body.in-setup .syncbtn{display:none}
+@media (max-width:700px){.findbar .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:0 4px;max-width:100%}.findbar .chips::-webkit-scrollbar{display:none}.chip{flex:none}.search{max-width:none;flex-basis:100%}.findbar .dens{display:none}}
 </style>
 </head>
 <body>
@@ -518,9 +572,10 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
     </div>
     <span class="sep" aria-hidden="true"></span>
     <div class="seg modes" role="group" aria-label="Mode">
-      <button id="modeTasks" type="button"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5l1.5 1.5L6 3.5M2 11l1.5 1.5L6 10M8.5 5h5.5M8.5 11.5h5.5"/></svg>Tasks</button>
-      <button id="modeLect" type="button"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 1.5 6 8 9l6.5-3z"/><path d="M4 7.3v3.4c2.2 1.6 5.8 1.6 8 0V7.3"/></svg>Lectures</button>
+      <button id="modeTasks" type="button" title="Tasks (T)"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5l1.5 1.5L6 3.5M2 11l1.5 1.5L6 10M8.5 5h5.5M8.5 11.5h5.5"/></svg>Tasks</button>
+      <button id="modeLect" type="button" title="Lectures (L)"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 1.5 6 8 9l6.5-3z"/><path d="M4 7.3v3.4c2.2 1.6 5.8 1.6 8 0V7.3"/></svg>Lectures</button>
     </div>
+    <button id="syncBtn" class="icon-btn syncbtn" type="button" aria-label="Sync calendar"><svg class="sync-ic" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 6A5.5 5.5 0 0 0 3.2 4.5M2.5 10a5.5 5.5 0 0 0 10.3 1.5"/><path d="M3 1.8v2.9h2.9M13 14.2v-2.9h-2.9"/></svg><span class="sync-dot" aria-hidden="true"></span></button>
     <label class="ctx"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><select id="semSel" class="pill" aria-label="Semester"></select></label>
     <div class="menu-wrap">
       <button id="moreBtn" class="icon-btn" type="button" aria-label="More options" aria-expanded="false">
@@ -533,6 +588,8 @@ body.mac-overlay .bar-in{padding-left:86px;min-height:56px}
         <hr>
         <button data-act="backup" type="button">Save a backup file</button>
         <button data-act="restore" type="button">Restore from backup…</button>
+        <hr>
+        <button data-act="shortcuts" type="button">Keyboard shortcuts <kbd>?</kbd></button>
         <hr>
         <button data-act="setup" type="button">Run the setup guide again</button>
         <button data-act="example" type="button">Load the example semester</button>
@@ -614,7 +671,7 @@ function normalize(v){
   v.rem=Object.assign({on:true,leads:[1440,180]},v.rem||{}); v.notified=v.notified||{};
   v.tasks=v.tasks.filter(t=>!(t.uid&&/\b(attendance|attendence)\b|נוכחות/i.test(t.title||"")));
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
-  v.ui=Object.assign({taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
+  v.ui=Object.assign({q:"",filter:null,density:"compact",taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
   if(!v.palette2){ // move courses onto the calmer colour set, keeping each course distinct
     const pal=COLORS.map(x=>x.c); let i=0;
@@ -675,6 +732,21 @@ function visibleTasks(){
     return !t.course||ids.has(t.course);
   });
 }
+/* search box + filter chips on top of the course choice */
+const FILTERS=[["week","This week"],["overdue","Overdue"],["est","Estimated"],["link","Has link"],["changed","New or moved"]];
+function filteredTasks(){
+  const q=(S.ui.q||"").trim().toLowerCase(), f=S.ui.filter, now=Date.now();
+  return visibleTasks().filter(t=>{
+    if(q){const c=course(t.course);const hay=(t.title+" "+(c?c.name:"")+" "+(t.notes||"")).toLowerCase(); if(!q.split(/\s+/).every(w=>hay.includes(w))) return false;}
+    const d=t.due?Date.parse(t.due):null;
+    if(f==="week") return !t.done&&d!==null&&d>=now&&d<now+7*864e5;
+    if(f==="overdue") return !t.done&&d!==null&&d<now;
+    if(f==="est") return !!t.tentative;
+    if(f==="link") return !!(t.link||firstUrl(t.notes));
+    if(f==="changed") return !!recentChange(t);
+    return true;
+  });
+}
 function weekStart(s,i){return addDays(sundayOf(parseISO(s.start)),7*i)}
 function currentWeek(s){
   const d=Math.floor((today()-sundayOf(parseISO(s.start)))/(7*864e5));
@@ -704,10 +776,11 @@ function toast(msg,opt){
   if(toastEl){toastEl.remove();clearTimeout(toastTimer)}
   const el=document.createElement("div");el.className="toast glass"+(opt.undo?" has-act":"");el.setAttribute("role","status");
   const t=document.createElement("span");t.className="tmsg";t.dir="auto";t.textContent=msg;el.appendChild(t);
-  if(opt.undo){const b=document.createElement("button");b.type="button";b.className="tact";b.textContent="Undo";
-    b.onclick=()=>{restoreSnapshot(opt.undo);el.remove();toastEl=null;toast("Undone")};el.appendChild(b);}
+  if(opt.undo) opt.action={label:"Undo",fn:()=>{restoreSnapshot(opt.undo);toast("Undone")}};
+  if(opt.action){el.classList.add("has-act");const b=document.createElement("button");b.type="button";b.className="tact";b.textContent=opt.action.label;
+    b.onclick=()=>{el.remove();toastEl=null;opt.action.fn()};el.appendChild(b);}
   document.body.appendChild(el);toastEl=el;
-  toastTimer=setTimeout(()=>{el.remove();if(toastEl===el)toastEl=null},opt.undo?6000:2600);
+  toastTimer=setTimeout(()=>{el.remove();if(toastEl===el)toastEl=null},opt.action?6000:2600);
 }
 const snapshot=()=>JSON.stringify(S);
 function restoreSnapshot(snap){const ui=S.ui;S=normalize(JSON.parse(snap));S.ui=ui;render()}
@@ -723,6 +796,8 @@ const I={
   right:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',
   list:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>',
   grid:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M6 6.5v7.5M10 6.5v7.5M2 10.2h12"/></svg>',
+  search:'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>',
+  hasnote:'<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3z"/><path d="M5.5 8h5M5.5 10.5h3.5"/></svg>',
   alert:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.8v3.6M8 11.2h.01"/></svg>',
   x:'<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'
 };
@@ -765,6 +840,7 @@ function notesHtml(text){
   out+=esc(src.slice(last));
   return out.replace(/(Moodle|Canvas)\s*:\s*(?=<a )/g,"");
 }
+const recentChange=t=>t.chg&&Date.now()-Date.parse(t.chg.at)<864e5?t.chg.k:"";
 const firstUrl=x=>(String(x||"").match(URL_RE)||[])[0]||"";
 function taskCard(t){
   const c=course(t.course), due=t.due?new Date(t.due):null, now=new Date();
@@ -781,14 +857,15 @@ function taskCard(t){
     <button class="check" data-toggle="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Mark as not done":"Mark as done"}">${t.done?I.check:""}</button>
     <div style="min-width:0">
       <div class="t" dir="auto">${esc(t.title)}</div>
-      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}</div>
+      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${recentChange(t)==="new"?'<span class="badge chg">new</span>':recentChange(t)==="moved"?`<span class="badge chg" title="Was ${esc(new Date(t.chg.from).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}))}">moved</span>`:""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}${notes?`<span class="hasnote" title="${esc(String(notes).slice(0,200))}">${I.hasnote}</span>`:""}</div>
       ${notes?`<div class="notes" dir="auto">${notesHtml(notes)}</div>`:""}
     </div>
     <div class="acts"><button data-edittask="${esc(t.id)}" aria-label="Edit task" title="Edit">${I.edit}</button></div>
   </article>`;
 }
 function renderTasks(){
-  const all=visibleTasks(), now=new Date(), week=new Date(now.getTime()+7*864e5);
+  const base=visibleTasks(), all=filteredTasks(), now=new Date(), week=new Date(now.getTime()+7*864e5);
+  const narrowing=!!((S.ui.q||"").trim()||S.ui.filter);
   const open=all.filter(t=>!t.done).sort((a,b)=>(a.due?Date.parse(a.due):9e15)-(b.due?Date.parse(b.due):9e15));
   const groups=[
     ["Overdue",open.filter(t=>t.due&&new Date(t.due)<now)],
@@ -799,9 +876,14 @@ function renderTasks(){
   const done=all.filter(t=>t.done).sort((a,b)=>Date.parse(b.due||0)-Date.parse(a.due||0));
   let h=banner();
   {const oc=open.length, cn=S.ui.course==="all"?"All courses":((course(S.ui.course)||{}).name||"Tasks");
-  h+=`<div class="viewbar"><div class="vh"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><button class="pill primary sm" data-act="addtask">+ Task</button></div><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;}
-  if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); fitCal(); return; }
-  if(!all.length){
+  h+=`<div class="viewbar"><div class="vh"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><button class="pill primary sm" data-act="addtask" title="New task (N)">+ Task</button></div><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;
+  h+=`<div class="findbar"><label class="search">${I.search}<input id="q" type="search" placeholder="Search tasks" value="${esc(S.ui.q||"")}" aria-label="Search tasks" autocomplete="off" dir="auto"><kbd aria-hidden="true">/</kbd></label>
+    <div class="chips" role="group" aria-label="Filter">${FILTERS.map(([k,l])=>`<button type="button" class="chip" data-filter="${k}" aria-pressed="${S.ui.filter===k}">${l}</button>`).join("")}</div>
+    ${S.ui.taskView!=="calendar"?`<button type="button" class="linkbtn dens" data-act="density" title="Change row size">${S.ui.density==="comfortable"?"Compact rows":"Roomy rows"}</button>`:""}</div>`;}
+  if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); fitCal(); keepSearchFocus(); return; }
+  if(!all.length&&narrowing&&base.length){
+    h+=`<div class="empty glass"><strong>Nothing matches${S.ui.q?` “${esc(S.ui.q)}”`:""}</strong>Try other words, or clear the search and filters.<div style="margin-top:14px"><button class="pill" data-act="clearfind">Clear search</button></div></div>`;
+  } else if(!all.length){
     h+=`<div class="empty glass"><strong>No tasks here yet</strong>Connect your university calendar (Moodle and similar), or add a task with the + Task button.<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="pill primary" data-act="import">Connect calendar</button><button class="pill" data-act="addtask">+ Task</button></div></div>`;
   }
   groups.forEach(([name,list])=>{
@@ -810,10 +892,12 @@ function renderTasks(){
   });
   if(done.length){
     h+=`<div class="section-h"><h2>Done</h2><span class="n tnum">${done.length}</span><button class="pill" style="margin-left:auto;padding:4px 12px;font-size:12px" data-act="toggledone">${S.ui.showDone?"Hide":"Show"}</button></div>`;
-    if(S.ui.showDone) h+=`<div class="list">${done.map(taskCard).join("")}</div>`;
+    if(S.ui.showDone||narrowing) h+=`<div class="list">${done.map(taskCard).join("")}</div>`;
   }
-  $("#main").innerHTML=h;
+  $("#main").innerHTML=h; keepSearchFocus();
 }
+let qHadFocus=false, qCaret=0;
+function keepSearchFocus(){const q=$("#q"); if(q&&qHadFocus){q.focus();try{q.setSelectionRange(qCaret,qCaret)}catch(e){}} qHadFocus=false;}
 /* tick a task: show the check, let the row fade out, then move it; Undo puts it back */
 function toggleDone(id,btn){
   const t=S.tasks.find(x=>x.id===id); if(!t) return;
@@ -1004,6 +1088,7 @@ function render(){
   document.body.classList.toggle("in-setup",inSetup);
   $("#setup").hidden=!inSetup;
   if(inSetup){renderSetup();save();return}
+  document.body.classList.toggle("compact",S.ui.density!=="comfortable");
   renderBar(); renderSide();
   if(S.ui.mode==="tasks") renderTasks(); else renderLectures();
   save();
@@ -1024,11 +1109,38 @@ function openModal(html,onMount){
 }
 function closeModal(){if(modalEl){modalEl.remove();modalEl=null}}
 document.addEventListener("keydown",e=>{
+  const typing=/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"&&!modalEl&&!S.setup){e.preventDefault();focusSearch();return}
+  if(e.key==="Escape"&&document.activeElement.id==="q"){S.ui.q="";S.ui.filter=null;render();document.activeElement.blur&&document.activeElement.blur();return}
+  if(!modalEl&&!S.setup&&!typing&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&shortcut(e)){e.preventDefault();return}
   if(e.key==="Escape"){ if(modalEl) closeModal(); else hideMenu(); }
   if(!modalEl&&S.ui.mode==="lectures"&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){
     if(e.key==="ArrowLeft") moveWeek(-1); if(e.key==="ArrowRight") moveWeek(1);
   }
 });
+function focusSearch(){ if(S.ui.mode!=="tasks"){S.ui.mode="tasks";render()} const q=$("#q"); if(q){q.focus();q.select()} }
+function rowsNow(){return [...document.querySelectorAll("#main .task[data-open]")]}
+function shortcut(e){
+  const k=e.key, rows=rowsNow(), cur=document.activeElement.closest?document.activeElement.closest(".task[data-open]"):null;
+  if(k==="/"){focusSearch();return true}
+  if(k==="n"||k==="N"){if(S.ui.mode==="tasks"){editTask(null);return true}return false}
+  if(k==="t"||k==="T"){S.ui.mode="tasks";render();return true}
+  if(k==="l"||k==="L"){S.ui.mode="lectures";render();return true}
+  if(k==="s"||k==="S"){syncFromButton();return true}
+  if(k==="?"){showShortcuts();return true}
+  if(S.ui.mode!=="tasks") return false;
+  if(k==="j"||k==="J"||k==="ArrowDown"&&cur||k==="k"||k==="K"||k==="ArrowUp"&&cur){
+    if(!rows.length) return true; const i=rows.indexOf(cur), down=/^(j|J|ArrowDown)$/.test(k);
+    const nx=i<0?rows[0]:rows[Math.max(0,Math.min(rows.length-1,i+(down?1:-1)))]; nx.focus(); nx.scrollIntoView({block:"nearest"}); return true}
+  if(cur&&(k==="x"||k==="X")){const id=cur.dataset.open, i=rows.indexOf(cur); toggleDone(id,cur.querySelector(".check")); setTimeout(()=>{const r=rowsNow();const nx=r[Math.min(i,r.length-1)];nx&&nx.focus()},420); return true}
+  if(cur&&(k==="e"||k==="E")){editTask(cur.dataset.open);return true}
+  return false;
+}
+function showShortcuts(){
+  const MOD=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)?"⌘ K":"Ctrl K";
+  const L=[["N","New task"],["/  or  "+MOD,"Search tasks"],["J / K","Move down / up the list"],["X","Mark the selected task done"],["E  or  Enter","Open the selected task"],["T / L","Tasks / Lectures"],["← / →","Previous / next week (Lectures)"],["S","Sync your calendar now"],["Esc","Close, or clear the search"],["?","This list"]];
+  openModal(`<h2>Keyboard shortcuts</h2><table class="keys">${L.map(([k,d])=>`<tr><td>${k.split("  or  ").map(x=>`<kbd>${esc(x)}</kbd>`).join(" or ")}</td><td>${esc(d)}</td></tr>`).join("")}</table><div class="foot"><button class="pill primary" id="kOk">Got it</button></div>`,m=>{m.querySelector("#kOk").onclick=closeModal});
+}
 function twoStep(btn,label,fn){
   btn.addEventListener("click",()=>{
     if(btn.classList.contains("armed")){fn();return}
@@ -1207,7 +1319,8 @@ function importIcs(text,opts){
   const evs=parseIcs(text);
   if(!evs.length) throw new Error(opts.silent?"The calendar link returned no events. If the academic year changed, get a new link from Moodle.":"No calendar events were found in this file. Make sure it’s the .ics file your Moodle (or other system) exported.");
   if(S.isExample){const fresh=emptyState(); fresh.semesters=S.semesters.map(s=>Object.assign({},s,{breaks:[]})); fresh.activeSemester=S.activeSemester; fresh.ui=S.ui; fresh.cal=S.cal; S=fresh;}
-  let added=0,updated=0,newCourses=0,skipped=0;
+  let added=0,updated=0,newCourses=0,skipped=0,moved=0;
+  const firstImport=!S.tasks.some(t=>t.uid), stamp=new Date().toISOString();
   evs.forEach(ev=>{
     const summary=ev.SUMMARY||"Untitled";
     if(/\bopens?$/i.test(summary)||/ - opens\b/i.test(summary)){skipped++;return}
@@ -1237,7 +1350,9 @@ function importIcs(text,opts){
     }
     if(existing&&!v.notes) delete v.notes; // Moodle sent no description: keep what's there
     if(existing&&!v.link&&existing.link) delete v.link;
-    if(existing){const keepTitle=existing.title; Object.assign(existing,v); if(keepTitle&&norm(keepTitle)===norm(v.title)) existing.title=keepTitle; updated++} else {S.tasks.push(Object.assign({id:uid(),uid:u,done:false},v));added++}
+    if(existing){const keepTitle=existing.title, oldDue=existing.due; Object.assign(existing,v); if(keepTitle&&norm(keepTitle)===norm(v.title)) existing.title=keepTitle; updated++;
+      if(oldDue&&v.due&&oldDue!==v.due&&!existing.done){moved++;existing.chg={k:"moved",at:stamp,from:oldDue}}}
+    else {const nt=Object.assign({id:uid(),uid:u,done:false},v); if(!firstImport) nt.chg={k:"new",at:stamp}; S.tasks.push(nt);added++}
   });
   S.tasks=S.tasks.filter(t=>!(t.uid&&isAttendance({SUMMARY:t.title})));
   // an older hand-made copy of a task that now comes from the calendar: keep the calendar one (and its "done" mark)
@@ -1250,9 +1365,9 @@ function importIcs(text,opts){
   S.isExample=false;
   if(!opts.silent){S.ui.course="all"; S.ui.mode="tasks";}
   render();
-  return {added,updated,newCourses,skipped};
+  return {added,updated,newCourses,skipped,moved};
 }
-const summarize=x=>`${x.added} new task${x.added===1?"":"s"}${x.updated?`, ${x.updated} updated`:""}${x.newCourses?`, ${x.newCourses} new course${x.newCourses===1?"":"s"}`:""}`;
+const summarize=x=>`${x.added} new task${x.added===1?"":"s"}${x.moved?`, ${x.moved} deadline${x.moved===1?"":"s"} moved`:""}${x.updated?`, ${x.updated} updated`:""}${x.newCourses?`, ${x.newCourses} new course${x.newCourses===1?"":"s"}`:""}`;
 async function fetchCalendar(url){
   if(IS_DESKTOP) return await window.__TAURI__.core.invoke("fetch_calendar",{url});
   const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); return await r.text();
@@ -1274,11 +1389,25 @@ async function syncNow(){
   }finally{syncing=false; updateSyncLabel(); render();}
 }
 function updateSyncLabel(){
-  const el=$("#syncLabel"); if(!el) return;
-  el.textContent=syncing?"Syncing…":(S.cal.url?(S.cal.lastSync?"Synced "+relShort(new Date(S.cal.lastSync)):"Calendar"):"Connect calendar");
+  const el=$("#syncLabel"); if(el) el.textContent=syncing?"Syncing…":(S.cal.url?(S.cal.lastSync?"Synced "+relShort(new Date(S.cal.lastSync)):"Calendar"):"Connect calendar");
+  const b=$("#syncBtn"); if(!b) return;
+  b.classList.toggle("spinning",syncing); b.classList.toggle("failed",!!S.cal.error&&!syncing);
+  const tip=syncing?"Syncing…":!S.cal.url?"Connect your university calendar":S.cal.error?"Sync failed: "+S.cal.error+" Click to try again.":(S.cal.lastSync?"Synced "+relShort(new Date(S.cal.lastSync))+". ":"")+(IS_DESKTOP?"Click to sync now (S)":"Click to import your calendar");
+  b.title=tip; b.setAttribute("aria-label",tip); b.disabled=syncing;
+}
+/* the header button: sync right away (desktop), otherwise open the calendar settings; right-click opens settings */
+async function syncFromButton(){
+  if(!S.cal.url||!IS_DESKTOP){openImport();return}
+  try{const x=await syncNow(); if(x) announceSync(x,true)}catch(e){toast("Sync failed. "+e.message,{action:{label:"Settings",fn:openImport}})}
+}
+function announceSync(x,manual){
+  const n=x.added, mv=x.moved||0;
+  if(!n&&!mv){ if(manual) toast("Up to date. No new deadlines."); return; }
+  const parts=[]; if(n) parts.push(n+" new task"+(n===1?"":"s")); if(mv) parts.push(mv+" deadline"+(mv===1?"":"s")+" moved");
+  toast(parts.join(", "),{action:{label:"Show",fn:()=>{S.ui.mode="tasks";S.ui.taskView="list";S.ui.course="all";S.ui.filter="changed";S.ui.q="";render()}}});
 }
 function relShort(d){const m=Math.round((Date.now()-d)/6e4);if(m<1)return"just now";if(m<60)return m+" min ago";const h=Math.round(m/60);if(h<24)return h+" hr ago";return Math.round(h/24)+" d ago"}
-function autoSync(){ if(IS_DESKTOP&&S.cal.url&&(!S.cal.lastSync||Date.now()-Date.parse(S.cal.lastSync)>3*36e5)) syncNow().catch(()=>{}); }
+function autoSync(){ if(IS_DESKTOP&&S.cal.url&&(!S.cal.lastSync||Date.now()-Date.parse(S.cal.lastSync)>3*36e5)) syncNow().then(x=>{if(x)announceSync(x,false)}).catch(()=>{}); }
 
 function openImport(){
   const m=openModal(`<h2>Connect your university calendar</h2>
@@ -1405,13 +1534,15 @@ function onbCats(text){
   });
   return {evs,map};
 }
+/* calendar groups that are site-wide notices, not courses: start unticked */
+const NOT_A_COURSE=/^(site\s+)?(announcements?|news(\s+forum)?)$|^site\b|הודעות|^כללי$|לוח מודעות/i;
 function onbLoad(text){
   if(!/BEGIN:VCALENDAR/.test(text)) throw new Error("That didn’t return a calendar. Use the link from “Get calendar URL”, not the Moodle page address.");
   const {map}=onbCats(text);
   const names=Object.keys(map).filter(Boolean);
   if(!names.length&&!map[""]) throw new Error("The calendar is empty. Check that you chose “All courses” when you created the link.");
   ONB.text=text; ONB.cats=names.sort((a,b)=>a.localeCompare(b)); ONB.picked={}; ONB.names={};
-  ONB.cats.forEach(n=>{ONB.picked[n]=true; ONB.names[n]=n});
+  ONB.cats.forEach(n=>{ONB.picked[n]=!NOT_A_COURSE.test(n); ONB.names[n]=n});
 }
 function stepper(n){
   const L=["Courses","Tasks","Timetable"];
@@ -1421,14 +1552,21 @@ function renderSetup(){
   const el=$("#setup"), n=S.setup;
   let h=`<div class="setup-card glass">${stepper(n)}`;
   if(n===1){
-    h+=`<h1>Your courses</h1><p class="lead">Paste your university calendar link and Taskal will find your courses.</p>`;
+    h+=`<h1>Your courses</h1><p class="lead">${ONB.cats?"Untick anything that isn’t a course you take.":"How do you want to add your courses?"}</p>`;
     if(!ONB.cats){
-      h+=`<div class="field"><label for="oUrl">Moodle calendar link</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="https://moodle…/calendar/export_execute.php?…" value="${esc(S.cal.url)}"><button class="pill primary" id="oFind" style="flex:none" ${ONB.busy?"disabled":""}>${ONB.busy?"Looking…":"Find my courses"}</button></div></div>
+      const src=ONB.src||"link";
+      h+=`<div class="srcs" role="radiogroup" aria-label="How to add courses">
+        <button type="button" class="src" role="radio" data-src="link" aria-checked="${src==="link"}"><b>Connect my university calendar</b><small>Moodle, Canvas and others. Keeps syncing.</small></button>
+        <button type="button" class="src" role="radio" data-src="file" aria-checked="${src==="file"}"><b>Upload a calendar file</b><small>An .ics file you exported.</small></button>
+        <button type="button" class="src" role="radio" data-src="manual" aria-checked="${src==="manual"}"><b>Type my courses</b><small>No university calendar needed.</small></button></div>`;
+      if(src==="link") h+=`<div class="field"><label for="oUrl">Calendar link</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="https://moodle…/calendar/export_execute.php?…" value="${esc(S.cal.url)}"><button class="pill primary" id="oFind" style="flex:none" ${ONB.busy?"disabled":""}>${ONB.busy?"Looking…":"Find my courses"}</button></div></div>
       ${IS_DESKTOP?"":`<p class="hint">In a web browser the link can’t be read directly. Use the calendar file instead, or the <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app</a> for automatic updates.</p>`}
       ${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}
       ${HOWTO}
       ${DEMO?`<div class="demotry"><span>No Moodle link at hand? Try the guide with a sample calendar.</span><button class="pill primary" id="oSample">Use a sample calendar</button></div>`:""}
-      <div class="alt"><button class="linkbtn" id="oFile">Use a calendar file (.ics) instead</button><span>·</span><button class="linkbtn" id="oManual">Add courses by hand</button></div>`;
+      `;
+      if(src==="file") h+=`<div class="srcbox"><p class="hint">In Moodle: Calendar → Import or export calendars → Export calendar → Export. Then choose the downloaded file here.</p><button class="pill primary" id="oFile">Choose a calendar file</button>${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}</div>`;
+      if(src==="manual") h+=`<div class="srcbox"><p class="hint">Type each course you take. You can add deadlines and lecture times after.</p><button class="pill primary" id="oManual">Start typing my courses</button></div>`;
     } else {
       const cnt=c=>{const {map}=onbCats(ONB.text);return (map[c]||[]).length};
       const {map}=onbCats(ONB.text);
@@ -1511,6 +1649,7 @@ function finishSetup(saveTimes){
 function wireSetup(el,n){
   const on=(id,f)=>{const b=el.querySelector("#"+id); if(b) b.onclick=f};
   if(n===1){
+    el.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ONB.src=b.dataset.src;ONB.err="";render();const f=el.querySelector("#oUrl,#oFile,#oManual");f&&f.focus()});
     on("oFind",async()=>{
       const url=(el.querySelector("#oUrl").value||"").trim();
       if(!/^https?:\/\//i.test(url)){ONB.err="Paste the full link, starting with https://";render();return}
@@ -1652,6 +1791,9 @@ function act(a){
   else if(a==="keepyear"){S.cal.linkYear=academicYear(today());render()}
   else if(a==="togglearch"){S.ui.showArchived=!S.ui.showArchived;render()}
   else if(a==="toggledone"){S.ui.showDone=!S.ui.showDone;render()}
+  else if(a==="clearfind"){S.ui.q="";S.ui.filter=null;render()}
+  else if(a==="density"){S.ui.density=S.ui.density==="comfortable"?"compact":"comfortable";render()}
+  else if(a==="shortcuts") showShortcuts();
   else if(a==="thisweek"){S.ui.week=null;render()}
   else if(a==="editfirst"){const c=activeCourses().find(c=>S.ui.course==="all"||c.id===S.ui.course);c&&editCourse(c.id)}
   else if(a==="reminders") editReminders();
@@ -1670,6 +1812,8 @@ $("#modeTasks").onclick=()=>{S.ui.mode="tasks";render()};
 $("#modeLect").onclick=()=>{S.ui.mode="lectures";render()};
 $("#semSel").onchange=e=>{S.activeSemester=e.target.value;S.ui.week=null;S.ui.course="all";render()};
 $("#importBtn").onclick=openImport;
+$("#syncBtn").onclick=syncFromButton;
+$("#syncBtn").oncontextmenu=e=>{e.preventDefault();openImport()};
 
 $("#moreBtn").onclick=e=>{e.stopPropagation();const mn=$("#menu");mn.hidden=!mn.hidden;$("#moreBtn").setAttribute("aria-expanded",String(!mn.hidden))};
 $("#menu").addEventListener("click",e=>{const b=e.target.closest("[data-act]");b&&act(b.dataset.act)});
@@ -1684,6 +1828,7 @@ $("#side").addEventListener("dblclick",e=>{const b=e.target.closest("[data-cours
 $("#main").addEventListener("click",e=>{
   const nb=e.target.closest("[data-note]"); if(nb){e.stopPropagation();editNote(nb.dataset.note);return}
   const tv=e.target.closest("[data-tv]"); if(tv){S.ui.taskView=tv.dataset.tv;render();return}
+  const fc=e.target.closest("[data-filter]"); if(fc){S.ui.filter=S.ui.filter===fc.dataset.filter?null:fc.dataset.filter;render();return}
   const cm=e.target.closest("[data-cm]"); if(cm){const n=+cm.dataset.cm,t=today();let [y,m]=(S.ui.calMonth||(t.getFullYear()+"-"+pad(t.getMonth()+1))).split("-").map(Number);if(n===0){y=t.getFullYear();m=t.getMonth()+1}else{m+=n;if(m<1){m=12;y--}if(m>12){m=1;y++}}S.ui.calMonth=y+"-"+pad(m);render();return}
   const dm=e.target.closest("[data-day]"); if(dm){dayList(dm.dataset.day);return}
   const b=e.target.closest("[data-act],[data-toggle],[data-edittask],[data-week],[data-lv],[data-seen]");
@@ -1698,6 +1843,7 @@ $("#main").addEventListener("click",e=>{
     const el=document.querySelector(`[data-seen="${CSS.escape(k)}"]`);el&&el.focus();}
 });
 $("#main").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches&&e.target.matches(".task[data-open]")){e.preventDefault();editTask(e.target.dataset.open);return}const b=e.target.closest(".sess[data-seen]");if(b&&(e.key===" "||e.key==="Enter")&&e.target===b){e.preventDefault();b.click()}});
+$("#main").addEventListener("input",e=>{if(e.target.id==="q"){S.ui.q=e.target.value;qHadFocus=true;qCaret=e.target.selectionStart;render()}});
 $("#main").addEventListener("change",e=>{if(e.target.id==="jump"){S.ui.week=+e.target.value;render()}});
 
 document.addEventListener("click",e=>{
