@@ -559,6 +559,61 @@ table.keys td:first-child{white-space:nowrap;width:44%}
 .findbar .chip[aria-pressed="true"]{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
 body.in-setup .syncbtn{display:none}
 @media (max-width:700px){.findbar .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:0 4px;max-width:100%}.findbar .chips::-webkit-scrollbar{display:none}.chip{flex:none}.search{max-width:none;flex-basis:100%}.findbar .dens{display:none}}
+
+/* Taskal 2, round 3 */
+.pill:disabled,.icon-btn:disabled,.chip:disabled,.linkbtn:disabled{opacity:.42;cursor:not-allowed;filter:none;box-shadow:none}
+.pill.loading{opacity:1;cursor:progress}
+.pill.primary.loading{background:color-mix(in srgb,var(--accent) 82%,#fff)}
+.spin{width:13px;height:13px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;display:inline-block;animation:spin .7s linear infinite;flex:none}
+@media (prefers-reduced-motion: reduce){.spin{animation-duration:2.4s}}
+.pill.danger{border-color:color-mix(in srgb,var(--danger) 45%,transparent);color:var(--danger)}
+.pill.danger:hover{background:color-mix(in srgb,var(--danger) 8%,var(--surface))}
+.pill.danger.armed{background:var(--danger);color:#fff;border-color:transparent}
+/* lectures: one meaning per colour */
+:root{--miss:var(--accent)}
+.sess:not(.future):not(.seen) .ring{border-color:var(--miss)!important;border-width:2.5px}
+.sess.future .ring{border-style:dashed}
+.sess.tg-s.short{flex-direction:row;align-items:center;padding-top:2px;padding-bottom:2px}
+.sess.tg-s.short .top{width:100%;gap:6px;min-width:0}
+.sess.tg-s.short .ring{width:16px;height:16px}
+.sess.tg-s.short .cn{margin:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.sess.tg-s.short .sub,.sess.tg-s.short .note{display:none}
+.sess.tg-s.short .nb{width:22px;height:22px;margin-left:0}
+.lechint{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:4px 4px 0}
+.lechint .hint{margin:0}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{width:13px;height:13px;border-radius:50%;display:inline-block;border:2px solid}
+.lg.up{border-color:#c3c9d2;border-style:dashed}.lg.miss{border-color:var(--miss);border-width:2.5px}.lg.seen{border-color:var(--ok);background:var(--ok)}
+
+.menu{min-width:270px;max-height:calc(100vh - 90px);overflow:auto}
+.menu .mh{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 12px 4px}
+.menu .mh:first-child{padding-top:4px}
+.menu .mh.danger{color:var(--danger);border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
+.menu .mdanger{color:var(--danger)}
+.menu .mdanger:hover{background:color-mix(in srgb,var(--danger) 8%,transparent)}
+.menu .msem[hidden]{display:none}.menu .msem{display:flex;align-items:center;gap:10px;padding:4px 12px 6px}.menu .msem label{font-size:13.5px;flex:none}.menu .msem select{height:32px;padding:0 8px;flex:1}
+.banner{position:relative}.banner .bx{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;padding:0}
+.banner .bx:hover{background:rgba(0,0,0,.06);color:var(--fg)}
+.banner p{padding-right:26px}
+/* V7: phone header in one row */
+@media (max-width:700px){
+  .bar-in{flex-wrap:nowrap;gap:6px;padding:6px 8px 6px 12px}
+  .brand{font-size:16px;gap:7px}.brand-mark{width:24px;height:24px}
+  .bar .ctx{display:none}
+  .seg.modes button{padding:6px 10px;font-size:13.5px}
+  .seg.modes button svg{display:none}
+  .syncbtn,#moreBtn{width:34px;height:34px;flex:none}
+  .synccard{display:none!important}
+  .menu .msem{display:flex!important}
+}
+
+.abk{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.abrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.abrow b{display:block;font-weight:600;font-size:14px}.abrow small{color:var(--muted);font-size:12.5px}
+
+.field.uni{max-width:420px}
+.field.uni .datehint{margin:6px 2px 0;display:block}
 </style>
 </head>
 <body>
@@ -582,18 +637,22 @@ body.in-setup .syncbtn{display:none}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
       </button>
       <div id="menu" class="menu glass" hidden>
+        <div class="mh">Settings</div>
+        <div class="msem"><label for="semSel2">Semester</label><select id="semSel2" class="inp"></select></div>
+        <button data-act="import" type="button">Calendar link…</button>
         <button data-act="semesters" type="button">Semesters &amp; holidays…</button>
         <button data-act="reminders" type="button">Reminders…</button>
         <button data-act="newcourse" type="button">New course…</button>
-        <hr>
+        <div class="mh">Your data</div>
         <button data-act="backup" type="button">Save a backup file</button>
-        <button data-act="restore" type="button">Restore from backup…</button>
-        <hr>
+        <button data-act="autobackups" type="button">Automatic backups…</button>
+        <button data-act="restore" type="button">Restore from a backup file…</button>
+        <div class="mh">Help</div>
         <button data-act="shortcuts" type="button">Keyboard shortcuts <kbd>?</kbd></button>
-        <hr>
         <button data-act="setup" type="button">Run the setup guide again</button>
-        <button data-act="example" type="button">Load the example semester</button>
-        <button data-act="empty" type="button">Start empty</button>
+        <div class="mh danger">Danger zone</div>
+        <button data-act="example" type="button" class="mdanger">Replace with the example semester</button>
+        <button data-act="empty" type="button" class="mdanger">Erase everything and start empty</button>
       </div>
     </div>
   </div>
@@ -671,6 +730,7 @@ function normalize(v){
   v.rem=Object.assign({on:true,leads:[1440,180]},v.rem||{}); v.notified=v.notified||{};
   v.tasks=v.tasks.filter(t=>!(t.uid&&/\b(attendance|attendence)\b|נוכחות/i.test(t.title||"")));
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
+  v.uni=v.uni||"";
   v.ui=Object.assign({q:"",filter:null,density:"compact",taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
   if(!v.palette2){ // move courses onto the calmer colour set, keeping each course distinct
@@ -804,6 +864,7 @@ const I={
 
 /* ---------- render: toolbar + sidebar ---------- */
 function renderBar(){
+  const s2=$("#semSel2"); if(s2){s2.innerHTML=S.semesters.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");s2.value=S.activeSemester||"";s2.parentElement.hidden=S.semesters.length<2&&!matchMedia("(max-width:700px)").matches}
   $("#modeTasks").setAttribute("aria-pressed",S.ui.mode==="tasks");
   $("#modeLect").setAttribute("aria-pressed",S.ui.mode==="lectures");
   const sel=$("#semSel");
@@ -953,7 +1014,7 @@ function dayList(k){
     m=>{m.querySelector("#dClose").onclick=closeModal; m.addEventListener("click",e=>{const b=e.target.closest("[data-edittask]");if(b){closeModal();editTask(b.dataset.edittask)}const c=e.target.closest("[data-toggle]");if(c){const x=S.tasks.find(z=>z.id===c.dataset.toggle),snap=snapshot();x.done=!x.done;closeModal();render();dayList(k);toast(x.done?"Done: “"+x.title+"”":"Back on your list: “"+x.title+"”",{undo:snap})}})});
 }
 function banner(){
-  if(S.isExample) return `<div class="banner"><p><b>This is an example semester.</b> Look around, then connect your own university calendar or start with an empty one. Everything you add stays on this device.</p>
+  if(S.isExample&&!S.ui.hideExample) return `<div class="banner"><button class="bx" data-act="hideexample" aria-label="Hide this message" title="Hide">${I.x}</button><p><b>This is an example semester.</b> Look around, then connect your own university calendar or start with an empty one. Everything you add stays on this device.</p>
   <button class="pill primary" data-act="import">Connect calendar</button><button class="pill" data-act="empty">Start empty</button></div>`;
   if(S.cal.url && S.cal.linkYear!==academicYear(today())) return `<div class="banner"><p><b>New academic year.</b> Many universities open a new Moodle site every year, so last year’s calendar link may stop working. Paste this year’s link to keep your tasks in sync.</p>
   <button class="pill primary" data-act="import">Update calendar link</button><button class="pill" data-act="keepyear">It still works</button></div>`;
@@ -993,7 +1054,7 @@ function renderLectures(){
   }
   if(S.ui.lecView==="week"&&innerWidth>820){
     h+=timeGrid(s,ws,slots);
-    h+=`<p class="hint" style="margin:2px 4px">Tap a session to mark it seen, live or later. Use the note icon for things like “seen till 00:57”.</p>`;
+    h+=`<div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap a session to mark it seen. Use the note icon for things like “seen till 00:57”.</p></div>`;
   } else if(S.ui.lecView==="week"){
     const used=new Set(slots.map(x=>x.weekday)); let days=[0,1,2,3,4]; if(used.has(5)) days.push(5); if(used.has(6)) days.push(6);
     const t=today();
@@ -1014,7 +1075,7 @@ function renderLectures(){
       });
       h+=`</div>`;
     });
-    h+=`</div><p class="hint" style="margin:2px 4px">Tap a session to mark it seen, live or later. Use the note icon for things like “seen till 00:57”.</p>`;
+    h+=`</div><div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap a session to mark it seen. Use the note icon for things like “seen till 00:57”.</p></div>`;
   } else {
     const t=today(), sorted=slots.slice().sort((a,b)=>a.course.localeCompare(b.course)||a.weekday-b.weekday||a.start.localeCompare(b.start));
     h+=`<div class="matrix-card glass"><table class="matrix"><thead><tr><th></th>${Array.from({length:s.weeks},(_,i)=>`<th class="tnum ${i===cur?"now":""}" title="${fmtShort(weekStart(s,i))}">${i===cur?"Now":i+1}</th>`).join("")}</tr></thead><tbody>`;
@@ -1064,9 +1125,10 @@ function timeGrid(s,ws,slots){
     list.forEach(sl=>{
       const c=course(sl.course), k=skey(sl,date), seen=!!S.seen[k], note=S.notes[k], pl=place.get(sl);
       const st=toMin(sl.start), en=toMin(sl.end);
-      h+=`<div class="sess tg-s ${seen?"seen":""} ${future?"future":""} ${off?"off":""}" style="--c:${esc(c.color)};top:${pct(st)};height:calc(${((en-st)/span*100).toFixed(3)}% - 4px);left:calc(${(pl.lane/pl.n*100).toFixed(3)}% + 3px);width:calc(${(100/pl.n).toFixed(3)}% - 6px)" ${off?"":`data-seen="${esc(k)}" role="button" tabindex="0" aria-pressed="${seen}" aria-label="${esc(c.name)} ${DAYS_LONG[d]} ${sl.start}: ${seen?"seen":"not seen"}"`}>
-        <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(sl.start)}–${esc(sl.end)}</span>${off?"":`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
-        <div class="cn" dir="auto">${esc(c.name)}</div>
+      const short=en-st<=75;
+      h+=`<div class="sess tg-s ${short?"short":""} ${seen?"seen":""} ${future?"future":""} ${off?"off":""}" title="${esc(c.name)} · ${esc(sl.start)}–${esc(sl.end)}${note?" · "+esc(note):""}" style="--c:${esc(c.color)};top:${pct(st)};height:calc(${((en-st)/span*100).toFixed(3)}% - 4px);left:calc(${(pl.lane/pl.n*100).toFixed(3)}% + 3px);width:calc(${(100/pl.n).toFixed(3)}% - 6px)" ${off?"":`data-seen="${esc(k)}" role="button" tabindex="0" aria-pressed="${seen}" aria-label="${esc(c.name)} ${DAYS_LONG[d]} ${sl.start}: ${seen?"seen":"not seen"}"`}>
+        <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(short?sl.start:sl.start+"–"+sl.end)}</span>${short?`<span class="cn" dir="auto">${esc(c.name)}</span>`:""}${off?"":`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
+        ${short?"":`<div class="cn" dir="auto">${esc(c.name)}</div>`}
         <div class="sub">${sl.kind&&sl.kind!=="Lecture"?`<span class="kind">${esc(sl.kind)}</span>`:""}${sl.room?`<span dir="auto">${esc(sl.room)}</span>`:""}</div>
         ${note?`<div class="note" dir="auto">${esc(note)}</div>`:""}
       </div>`;
@@ -1141,6 +1203,9 @@ function showShortcuts(){
   const L=[["N","New task"],["/  or  "+MOD,"Search tasks"],["J / K","Move down / up the list"],["X","Mark the selected task done"],["E  or  Enter","Open the selected task"],["T / L","Tasks / Lectures"],["← / →","Previous / next week (Lectures)"],["S","Sync your calendar now"],["Esc","Close, or clear the search"],["?","This list"]];
   openModal(`<h2>Keyboard shortcuts</h2><table class="keys">${L.map(([k,d])=>`<tr><td>${k.split("  or  ").map(x=>`<kbd>${esc(x)}</kbd>`).join(" or ")}</td><td>${esc(d)}</td></tr>`).join("")}</table><div class="foot"><button class="pill primary" id="kOk">Got it</button></div>`,m=>{m.querySelector("#kOk").onclick=closeModal});
 }
+/* a button that waits on something: spinner + verb, same width, can't be pressed twice */
+function busy(btn,label){ if(!btn) return ()=>{}; const w=btn.offsetWidth, html=btn.innerHTML; btn.style.minWidth=w+"px"; btn.classList.add("loading"); btn.disabled=true; btn.setAttribute("aria-busy","true");
+  btn.innerHTML=`<span class="spin" aria-hidden="true"></span>${esc(label)}`; return ()=>{btn.classList.remove("loading");btn.disabled=false;btn.removeAttribute("aria-busy");btn.innerHTML=html;btn.style.minWidth=""}; }
 function twoStep(btn,label,fn){
   btn.addEventListener("click",()=>{
     if(btn.classList.contains("armed")){fn();return}
@@ -1434,9 +1499,10 @@ function openImport(){
     if(!/^https?:\/\//i.test(url)){res.innerHTML=`<div class="result err">Paste the full link, starting with https://</div>`;return}
     S.cal.url=url; S.cal.linkYear=academicYear(today()); S.cal.error=""; if(!S.cal.since&&S.tasks.length) S.cal.since=iso(addDays(today(),-1)); save();
     if(!IS_DESKTOP){res.innerHTML=`<div class="result">Link saved. It will sync automatically when you open Taskal in the desktop app.</div>`;render();return}
-    res.innerHTML=`<div class="result">Syncing…</div>`;
+    res.innerHTML=""; const done=busy(m.querySelector("#calSave"),"Syncing…");
     try{const x=await syncNow(); res.innerHTML=`<div class="result"><b>Synced.</b> ${esc(summarize(x))}.</div>`}
     catch(e){res.innerHTML=`<div class="result err">${esc(e.message)}</div>`}
+    finally{done()}
   };
   const rm=m.querySelector("#calRemove"); if(rm) rm.onclick=()=>{S.cal={url:"",lastSync:null,lastResult:"",linkYear:null,error:""};closeModal();render();updateSyncLabel();toast("Calendar link removed")};
   const handle=file=>{
@@ -1481,10 +1547,31 @@ async function backup(){
   try{await navigator.clipboard.writeText(data);toast("Backup copied to the clipboard. Paste it into a text file to keep it.")}
   catch(e){openModal(`<h2>Your backup</h2><p class="hint">Copy everything below into a text file named ${esc(name)}.</p><textarea class="inp" style="min-height:240px" readonly>${esc(data)}</textarea><div class="foot"><button class="pill primary" id="bOk">Done</button></div>`,m=>{m.querySelector("textarea").select();m.querySelector("#bOk").onclick=closeModal})}
 }
+/* ---------- automatic backups: weekly, and before anything that replaces your data ---------- */
+const AUTO_KEY=KEY+".auto", AUTO_MAX=5;
+function autoList(){try{return JSON.parse(localStorage.getItem(AUTO_KEY)||"[]")}catch(e){return []}}
+function autoBackup(why){
+  if(DEMO||S.isExample||!(S.tasks.length||S.courses.length)) return;
+  try{const L=autoList(); L.unshift({at:new Date().toISOString(),why:why||"Weekly backup",tasks:S.tasks.length,courses:S.courses.length,data:JSON.stringify(S)});
+    while(L.length>AUTO_MAX) L.pop();
+    try{localStorage.setItem(AUTO_KEY,JSON.stringify(L))}catch(e){L.length=Math.max(1,L.length-2);localStorage.setItem(AUTO_KEY,JSON.stringify(L))}
+  }catch(e){}
+}
+function weeklyBackup(){const L=autoList(); if(!L.length||Date.now()-Date.parse(L.find(x=>x.why==="Weekly backup")?.at||0)>7*864e5) autoBackup("Weekly backup")}
+function showAutoBackups(){
+  const L=autoList(), when=x=>new Date(x.at).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false});
+  openModal(`<h2>Automatic backups</h2><p class="hint">Taskal keeps a copy of everything once a week, and before anything that replaces your data. The last ${AUTO_MAX} are kept on this computer.</p>
+    ${L.length?`<div class="abk">${L.map((x,i)=>`<div class="abrow"><div><b>${esc(when(x))}</b><small>${esc(x.why)} · ${x.courses} course${x.courses===1?"":"s"}, ${x.tasks} task${x.tasks===1?"":"s"}</small></div><button class="pill" data-abr="${i}">Restore</button></div>`).join("")}</div>`:`<div class="result">No automatic backups yet. The first one is made today.</div>`}
+    <div class="foot"><button class="pill" id="abNow">Back up now</button><button class="pill primary" id="abOk">Close</button></div>`,
+  m=>{m.querySelector("#abOk").onclick=closeModal;
+    m.querySelector("#abNow").onclick=()=>{autoBackup("Made by you");closeModal();showAutoBackups();toast("Backup made")};
+    m.querySelectorAll("[data-abr]").forEach(b=>b.onclick=()=>{const x=autoList()[+b.dataset.abr]; if(!x) return; const snap=snapshot();
+      try{const v=JSON.parse(x.data); const ui=S.ui; S=normalize(v); S.ui=ui; closeModal(); render(); toast("Restored the backup from "+when(x),{undo:snap})}catch(e){toast("That backup couldn’t be read")}})});
+}
 function restore(){
   const f=$("#fileJson");f.value="";
   f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();
-    r.onload=()=>{try{const v=JSON.parse(String(r.result));if(!v.courses||!v.tasks)throw 0;delete v.app;S=normalize(v);S.isExample=false;render();toast("Backup restored")}
+    r.onload=()=>{try{const v=JSON.parse(String(r.result));if(!v.courses||!v.tasks)throw 0;delete v.app;autoBackup("Before restoring a file");S=normalize(v);S.isExample=false;render();toast("Backup restored")}
       catch(e){toast("That file isn’t a Taskal backup")}};r.readAsText(file)};
   f.click();
 }
@@ -1504,6 +1591,26 @@ function sampleIcs(){
 }
 
 /* ---------- setup guide: 1 courses → 2 tasks → 3 timetable ---------- */
+/* universities: which system they use and their published semester dates (2026-27, from each university's academic calendar) */
+const UNIS=[
+  {id:"huji",name:"Hebrew University of Jerusalem",lms:"Moodle",A:["2026-10-11","2027-01-15"]},
+  {id:"tau",name:"Tel Aviv University",lms:"Moodle",A:["2026-10-18","2027-01-18"]},
+  {id:"technion",name:"Technion",lms:"Moodle",A:["2026-10-28","2027-02-02"]},
+  {id:"biu",name:"Bar-Ilan University",lms:"Moodle",A:["2026-10-11","2027-01-17"]},
+  {id:"haifa",name:"University of Haifa",lms:"Moodle",A:["2026-10-11","2027-01-10"]},
+  {id:"bgu",name:"Ben-Gurion University",lms:"Moodle"},
+  {id:"ariel",name:"Ariel University",lms:"Moodle"},
+  {id:"reichman",name:"Reichman University",lms:"Moodle"},
+  {id:"openu",name:"The Open University",lms:"Moodle"},
+  {id:"college",name:"A college in Israel",lms:"Moodle"},
+  {id:"other",name:"Somewhere else",lms:""}
+];
+const uniOf=id=>UNIS.find(u=>u.id===id)||null;
+function applyUni(id){
+  S.uni=id||""; const u=uniOf(id), s=sem();
+  if(u&&u.A&&s){s.name="Semester A";s.start=u.A[0];s.weeks=Math.max(1,Math.ceil((parseISO(u.A[1])-parseISO(u.A[0]))/(7*864e5)));}
+  if(u&&id==="other") ONB.hol=false;
+}
 function guessSemester(){
   const t=today(), y=t.getFullYear(), m=t.getMonth();
   const nextSunday=d=>{const x=new Date(d);x.setDate(x.getDate()+((7-x.getDay())%7));return x};
@@ -1554,15 +1661,17 @@ function renderSetup(){
   if(n===1){
     h+=`<h1>Your courses</h1><p class="lead">${ONB.cats?"Untick anything that isn’t a course you take.":"How do you want to add your courses?"}</p>`;
     if(!ONB.cats){
-      const src=ONB.src||"link";
+      const src=ONB.src||"link", U=uniOf(S.uni);
+      h+=`<div class="field uni"><label for="oUni">Your university</label><select id="oUni" class="inp"><option value="">Choose…</option>${UNIS.map(u=>`<option value="${u.id}" ${S.uni===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>
+        ${U&&U.A?`<span class="datehint">Semester A: ${esc(longDate(parseISO(U.A[0])))} to ${esc(longDate(parseISO(U.A[1])))}, taken from the university’s calendar. You can change it later.</span>`:U&&U.id!=="other"?`<span class="datehint">You’ll set your semester dates in step 3.</span>`:""}</div>`;
       h+=`<div class="srcs" role="radiogroup" aria-label="How to add courses">
-        <button type="button" class="src" role="radio" data-src="link" aria-checked="${src==="link"}"><b>Connect my university calendar</b><small>Moodle, Canvas and others. Keeps syncing.</small></button>
+        <button type="button" class="src" role="radio" data-src="link" aria-checked="${src==="link"}"><b>Connect my university calendar</b><small>${U&&U.lms?esc(U.lms)+" calendar link. Keeps syncing.":"Moodle, Canvas and others. Keeps syncing."}</small></button>
         <button type="button" class="src" role="radio" data-src="file" aria-checked="${src==="file"}"><b>Upload a calendar file</b><small>An .ics file you exported.</small></button>
         <button type="button" class="src" role="radio" data-src="manual" aria-checked="${src==="manual"}"><b>Type my courses</b><small>No university calendar needed.</small></button></div>`;
-      if(src==="link") h+=`<div class="field"><label for="oUrl">Calendar link</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="https://moodle…/calendar/export_execute.php?…" value="${esc(S.cal.url)}"><button class="pill primary" id="oFind" style="flex:none" ${ONB.busy?"disabled":""}>${ONB.busy?"Looking…":"Find my courses"}</button></div></div>
+      if(src==="link") h+=`<div class="field"><label for="oUrl">${U&&U.lms?esc(U.lms)+" calendar link":"Calendar link"}</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="https://moodle…/calendar/export_execute.php?…" value="${esc(S.cal.url)}"><button class="pill primary ${ONB.busy?"loading":""}" id="oFind" style="flex:none" ${ONB.busy?"disabled aria-busy=\"true\"":""}>${ONB.busy?'<span class="spin" aria-hidden="true"></span>Looking…':"Find my courses"}</button></div></div>
       ${IS_DESKTOP?"":`<p class="hint">In a web browser the link can’t be read directly. Use the calendar file instead, or the <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app</a> for automatic updates.</p>`}
       ${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}
-      ${HOWTO}
+      ${S.uni&&S.uni!=="other"?HOWTO.replace('<details class="howto">','<details class="howto" open>'):HOWTO}
       ${DEMO?`<div class="demotry"><span>No Moodle link at hand? Try the guide with a sample calendar.</span><button class="pill primary" id="oSample">Use a sample calendar</button></div>`:""}
       `;
       if(src==="file") h+=`<div class="srcbox"><p class="hint">In Moodle: Calendar → Import or export calendars → Export calendar → Export. Then choose the downloaded file here.</p><button class="pill primary" id="oFile">Choose a calendar file</button>${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}</div>`;
@@ -1649,6 +1758,7 @@ function finishSetup(saveTimes){
 function wireSetup(el,n){
   const on=(id,f)=>{const b=el.querySelector("#"+id); if(b) b.onclick=f};
   if(n===1){
+    const us=el.querySelector("#oUni"); if(us) us.onchange=()=>{applyUni(us.value);render()};
     el.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ONB.src=b.dataset.src;ONB.err="";render();const f=el.querySelector("#oUrl,#oFile,#oManual");f&&f.focus()});
     on("oFind",async()=>{
       const url=(el.querySelector("#oUrl").value||"").trim();
@@ -1791,6 +1901,8 @@ function act(a){
   else if(a==="keepyear"){S.cal.linkYear=academicYear(today());render()}
   else if(a==="togglearch"){S.ui.showArchived=!S.ui.showArchived;render()}
   else if(a==="toggledone"){S.ui.showDone=!S.ui.showDone;render()}
+  else if(a==="hideexample"){S.ui.hideExample=true;render();toast("Hidden. You can start fresh any time from the ⋯ menu.")}
+  else if(a==="autobackups") showAutoBackups();
   else if(a==="clearfind"){S.ui.q="";S.ui.filter=null;render()}
   else if(a==="density"){S.ui.density=S.ui.density==="comfortable"?"compact":"comfortable";render()}
   else if(a==="shortcuts") showShortcuts();
@@ -1798,19 +1910,21 @@ function act(a){
   else if(a==="editfirst"){const c=activeCourses().find(c=>S.ui.course==="all"||c.id===S.ui.course);c&&editCourse(c.id)}
   else if(a==="reminders") editReminders();
   else if(a==="setup"){S.setup=1;Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:""});render()}
-  else if(a==="example"){confirmReplace("Load the example semester? This replaces everything you have in Taskal.",()=>{const ui=S.ui;S=example();S.ui=Object.assign(S.ui,{mode:ui.mode});render()})}
+  else if(a==="example"){confirmReplace("Load the example semester? This replaces everything you have in Taskal.",()=>{autoBackup("Before loading the example");const ui=S.ui;S=example();S.ui=Object.assign(S.ui,{mode:ui.mode});render()})}
   else if(a==="empty"){
     if(S.isExample){S=emptyState();render();toast("Started fresh. Connect your calendar or add a course.")}
-    else confirmReplace("Start empty? This removes all your courses, tasks and lecture marks.",()=>{S=emptyState();render()});
+    else confirmReplace("Start empty? This removes all your courses, tasks and lecture marks.",()=>{autoBackup("Before starting empty");S=emptyState();render()});
   }
 }
 function confirmReplace(msg,fn){
-  openModal(`<h2>Are you sure?</h2><p>${esc(msg)} Save a backup first if you might want it back.</p><div class="foot"><button class="pill" id="xNo">Cancel</button><button class="pill danger armed" id="xYes">Replace</button></div>`,
+  openModal(`<h2>Are you sure?</h2><p>${esc(msg)} Taskal saves an automatic backup first, so you can get it back from ⋯ → Automatic backups.</p><div class="foot"><button class="pill" id="xNo">Cancel</button><button class="pill danger armed" id="xYes">Replace</button></div>`,
     m=>{m.querySelector("#xNo").onclick=closeModal;m.querySelector("#xYes").onclick=()=>{closeModal();fn()}});
 }
 $("#modeTasks").onclick=()=>{S.ui.mode="tasks";render()};
 $("#modeLect").onclick=()=>{S.ui.mode="lectures";render()};
 $("#semSel").onchange=e=>{S.activeSemester=e.target.value;S.ui.week=null;S.ui.course="all";render()};
+$("#semSel2").onchange=e=>{S.activeSemester=e.target.value;S.ui.week=null;S.ui.course="all";hideMenu();render()};
+$("#semSel2").onclick=e=>e.stopPropagation();
 $("#importBtn").onclick=openImport;
 $("#syncBtn").onclick=syncFromButton;
 $("#syncBtn").oncontextmenu=e=>{e.preventDefault();openImport()};
@@ -1854,8 +1968,9 @@ if(DEMO){$("#demoBar").hidden=false;$("#demoRestart").onclick=()=>{Object.assign
 S=load();
 render();
 updateSyncLabel();
+weeklyBackup();
 autoSync();
-setInterval(()=>{autoSync();updateSyncLabel()},10*60*1000);
+setInterval(()=>{weeklyBackup();autoSync();updateSyncLabel()},10*60*1000);
 setInterval(checkReminders,60*1000);
 setTimeout(async()=>{ if(!S.setup&&S.rem.on&&IS_DESKTOP) await notifyAllowed(true); checkReminders(); },1500);
 })();
