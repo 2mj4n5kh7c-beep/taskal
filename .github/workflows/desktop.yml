@@ -2,7 +2,7 @@ name: Build desktop apps
 
 on:
   push:
-    tags: ['v*']
+    tags: ['t2-v*']
   workflow_dispatch:
 
 permissions:
@@ -40,11 +40,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'Taskal v__VERSION__'
+          tagName: t2-v__VERSION__
+          releaseName: 'Taskal 2 v__VERSION__'
           releaseBody: |
-            **Windows:** download `Taskal_..._x64-setup.exe` and run it. If Windows shows "Windows protected your PC", click **More info → Run anyway** (the app isn't signed with a paid certificate).
-            **Mac:** download the `.dmg`, drag Taskal to Applications, then right-click → Open the first time.
+            **Windows:** download `Taskal 2_..._x64-setup.exe` and run it. If Windows shows "Windows protected your PC", click **More info → Run anyway** (the app isn't signed with a paid certificate).
+            **Mac:** download the `.dmg`, drag Taskal 2 to Applications, then right-click → Open the first time.
           releaseDraft: false
-          prerelease: false
+          prerelease: true
           args: ${{ matrix.args }}

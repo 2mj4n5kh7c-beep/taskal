@@ -53,12 +53,12 @@ fn main() {
             {
                 use tauri::menu::{Menu, MenuItem};
                 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-                let open = MenuItem::with_id(app, "open", "Open Taskal", true, None::<&str>)?;
-                let quit = MenuItem::with_id(app, "quit", "Quit Taskal", true, None::<&str>)?;
+                let open = MenuItem::with_id(app, "open", "Open Taskal 2", true, None::<&str>)?;
+                let quit = MenuItem::with_id(app, "quit", "Quit Taskal 2", true, None::<&str>)?;
                 let menu = Menu::with_items(app, &[&open, &quit])?;
                 TrayIconBuilder::new()
                     .icon(app.default_window_icon().unwrap().clone())
-                    .tooltip("Taskal")
+                    .tooltip("Taskal 2")
                     .menu(&menu)
                     .show_menu_on_left_click(false)
                     .on_menu_event(|app, e| match e.id.as_ref() {
