@@ -791,7 +791,7 @@ function cloudData(v){const x=JSON.parse(typeof v==="string"?v:JSON.stringify(v)
 const cloudContent=j=>{try{return JSON.stringify(cloudData(j))}catch(e){return ""}};
 
 /* ---------- accounts (optional): email code sign-in + sync through Supabase ---------- */
-const SB_URL="https://flncacieduwnlijpusqb.supabase.co", SB_KEY="";   // publishable key only, never the secret one
+const SB_URL="https://flncacieduwnlijpusqb.supabase.co", SB_KEY="sb_publishable_x1Za4-No8UoOSATTcTWrYA_8_P6Ooza";   // publishable key only, never the secret one
 const Cloud={
   KEYA:KEY+".auth", KEYM:KEY+".sync", status:"off", timer:null, busy:false,
   on(){return !!SB_KEY&&!DEMO},
