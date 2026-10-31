@@ -704,6 +704,33 @@ body.has-panel .shell{padding-right:440px}
 
 .legend .lg{border-radius:50%!important}
 .sess .recd{font-size:9.5px;font-weight:700;letter-spacing:.04em;color:#c0392b;border:1px solid currentColor;border-radius:4px;padding:0 3px;line-height:14px;flex:none}
+
+/* simpler setup */
+.setup-card h1{margin-bottom:18px}
+.setup-card .field.big{margin-bottom:14px}.setup-card .field.big label{font-size:13px}
+.setup-card .field.big .inp{height:44px;font-size:15px}
+.howto summary{font-size:13px}.howto .path{margin:8px 0 0;font-size:13px;line-height:1.8;color:var(--muted)}
+.howto .path b{color:var(--fg);font-weight:500}
+.alt.quiet{margin-top:14px;font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ofoot.quiet{justify-content:space-between}
+.ofoot.quiet .linkbtn{color:var(--muted);font-size:13px}
+.dls{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr) auto 90px;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);background:var(--surface)}
+.dl:first-child{border-top:0}.dl b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dl .dln{font-weight:600}.dl small{color:var(--muted);text-align:right;font-size:12.5px}
+.chk.quiet{font-size:13px;color:var(--muted)}
+h2.sub2{font-size:15px;font-weight:600;margin:20px 0 8px}
+.chip.ghost{border-style:dashed;color:var(--muted)}
+.rcustom[hidden]{display:none}
+.semline{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:14px;margin-bottom:12px}
+.semline+.osem{margin:-4px 0 12px}
+.catbox{gap:8px}
+.catgo{align-self:flex-start;height:44px;padding:0 20px;font-size:15px}
+.catc.miss{flex-direction:row;justify-content:space-between;align-items:center;opacity:.75}
+.catc .recd{font-size:9.5px;font-weight:700;letter-spacing:.04em;color:#c0392b;border:1px solid currentColor;border-radius:4px;padding:0 3px;line-height:14px}
+.addnc{margin:10px 0 0}
+
+.dl b,.orow .inp,.ogh b,.catn b{text-align:left;unicode-bidi:plaintext}
 </style>
 </head>
 <body>
@@ -2099,11 +2126,8 @@ function setupState(){
   return normalize({version:1,isExample:false,setup:1,semesters:[{id,name:g.name,start:g.start,weeks:g.weeks,breaks:[]}],activeSemester:id,courses:[],tasks:[],slots:[],seen:{},notes:{}});
 }
 const ONB={text:null,cats:null,picked:{},names:{},extra:[],err:"",busy:false,past:false,times:{}};
-const HOWTO=`<details class="howto"><summary>Where do I find this link?</summary>
-  <p class="hint" style="margin-top:8px"><b>Moodle</b> (Hebrew U, Tel Aviv, Technion, Bar-Ilan, Ben-Gurion, Haifa, Ariel, Reichman and most others):</p>
-  <ol class="steps"><li>Open <b>Calendar</b> in Moodle.</li><li>Click <b>Import or export calendars</b> → <b>Export calendar</b>.</li>
-  <li>Choose <b>All courses</b> and <b>Recent and next 60 days</b>.</li><li>Click <b>Get calendar URL</b> and copy the link.</li></ol>
-  <p class="hint"><b>Canvas:</b> Calendar → <b>Calendar Feed</b>. No export option? Download the calendar file instead and choose it below.</p></details>`;
+const HOWTO=`<details class="howto"><summary>Where do I get this link?</summary>
+  <p class="path">Moodle → <b>Calendar</b> → <b>Import or export calendars</b> → <b>Export calendar</b> → <b>All courses</b> + <b>Recent and next 60 days</b> → <b>Get calendar URL</b></p></details>`;
 function onbCats(text){
   const evs=parseIcs(text), map={};
   evs.forEach(ev=>{
@@ -2125,91 +2149,78 @@ function onbLoad(text){
 }
 function stepper(n){
   const cur=n<=2?1:2, L=["Calendar","Timetable"];
-  return `<ol class="stepper">${L.map((l,i)=>`<li class="${i+1<cur?"done":i+1===cur?"on":""}"><span>${i+1<cur?I.check:i+1}</span>${l}${i===0&&cur===1?`<small>${n===1?"courses":"deadlines &amp; reminders"}</small>`:""}</li>`).join("")}</ol>`;
+  return `<ol class="stepper">${L.map((l,i)=>`<li class="${i+1<cur?"done":i+1===cur?"on":""}"><span>${i+1<cur?I.check:i+1}</span>${l}</li>`).join("")}</ol>`;
 }
 /* reminder times: a set of presets plus any custom ones the person adds */
 const fmtLead=m=>m%10080===0?(m/10080)+" week"+(m/10080===1?"":"s")+" before":m%1440===0?(m/1440)+" day"+(m/1440===1?"":"s")+" before":m%60===0?(m/60)+" hour"+(m/60===1?"":"s")+" before":m+" minutes before";
 function remPicker(){
   const all=[...new Set(LEADS.map(x=>x[0]).concat(S.rem.leads))].sort((a,b)=>b-a);
-  return `<div class="rpick" id="remPick"><div class="rchips">${all.map(v=>`<button type="button" class="chip" data-lead="${v}" aria-pressed="${S.rem.leads.includes(v)}">${fmtLead(v)}</button>`).join("")}</div>
-    <div class="rcustom"><span>Add your own:</span><input class="inp" type="number" min="1" max="60" id="remN" value="2" aria-label="How many"><select class="inp" id="remU" aria-label="Unit"><option value="60">hours</option><option value="1440" selected>days</option><option value="10080">weeks</option><option value="1">minutes</option></select><span>before</span><button type="button" class="pill" id="remAdd">Add</button></div></div>`;
+  return `<div class="rpick" id="remPick"><div class="rchips">${all.map(v=>`<button type="button" class="chip" data-lead="${v}" aria-pressed="${S.rem.leads.includes(v)}">${fmtLead(v)}</button>`).join("")}${S.setup&&!ONB.remOther?`<button type="button" class="chip ghost" id="remOther">+ Other</button>`:""}</div>
+    ${ONB.remOther||!S.setup?`<div class="rcustom"><span>Other:</span>`:`<div class="rcustom" hidden>`}<input class="inp" type="number" min="1" max="60" id="remN" value="2" aria-label="How many"><select class="inp" id="remU" aria-label="Unit"><option value="60">hours</option><option value="1440" selected>days</option><option value="10080">weeks</option><option value="1">minutes</option></select><span>before</span><button type="button" class="pill" id="remAdd">Add</button></div></div>`;
 }
 function wireRemPicker(root,after){
   root.querySelectorAll("[data-lead]").forEach(b=>b.onclick=()=>{const v=+b.dataset.lead;S.rem.leads=S.rem.leads.includes(v)?S.rem.leads.filter(x=>x!==v):S.rem.leads.concat(v);S.rem.on=S.rem.leads.length>0;after()});
+  const ro=root.querySelector("#remOther"); if(ro) ro.onclick=()=>{ONB.remOther=true;after()};
   const add=root.querySelector("#remAdd"); if(add) add.onclick=()=>{const n=Math.max(1,Math.min(60,+root.querySelector("#remN").value||1)),u=+root.querySelector("#remU").value,v=n*u; if(!S.rem.leads.includes(v)) S.rem.leads.push(v); S.rem.on=true; if(IS_DESKTOP) notifyAllowed(true); after()};
 }
 function renderSetup(){
   const el=$("#setup"), n=S.setup;
   let h=`<div class="setup-card glass">${stepper(n)}`;
   if(n===1){
-    h+=`<h1>Your courses</h1><p class="lead">${ONB.cats?"Untick anything that isn’t a course you take.":"How do you want to add your courses?"}</p>`;
     if(!ONB.cats){
-      const src=ONB.src||"link", U=uniOf(S.uni);
-      h+=`<div class="field uni"><label for="oUni">Your university</label><select id="oUni" class="inp"><option value="">Choose…</option>${UNIS.map(u=>`<option value="${u.id}" ${S.uni===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>
-        ${U&&U.A?`<span class="datehint">Semester A: ${esc(longDate(parseISO(U.A[0])))} to ${esc(longDate(parseISO(U.A[1])))}, taken from the university’s calendar. You can change it later.</span>`:U&&U.id!=="other"?`<span class="datehint">You’ll set your semester dates in step 3.</span>`:""}</div>`;
-      h+=`<div class="srcs" role="radiogroup" aria-label="How to add courses">
-        <button type="button" class="src" role="radio" data-src="link" aria-checked="${src==="link"}"><b>Connect my university calendar</b><small>${U&&U.lms?esc(U.lms)+" calendar link. Keeps syncing.":"Moodle, Canvas and others. Keeps syncing."}</small></button>
-        <button type="button" class="src" role="radio" data-src="file" aria-checked="${src==="file"}"><b>Upload a calendar file</b><small>An .ics file you exported.</small></button>
-        <button type="button" class="src" role="radio" data-src="manual" aria-checked="${src==="manual"}"><b>Type my courses</b><small>No university calendar needed.</small></button></div>`;
-      if(src==="link") h+=`<div class="field"><label for="oUrl">${U&&U.lms?esc(U.lms)+" calendar link":"Calendar link"}</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="https://moodle…/calendar/export_execute.php?…" value="${esc(S.cal.url)}"><button class="pill primary ${ONB.busy?"loading":""}" id="oFind" style="flex:none" ${ONB.busy?"disabled aria-busy=\"true\"":""}>${ONB.busy?'<span class="spin" aria-hidden="true"></span>Looking…':"Find my courses"}</button></div></div>
-      ${IS_DESKTOP?"":`<p class="hint">In a web browser the link can’t be read directly. Use the calendar file instead, or the <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app</a> for automatic updates.</p>`}
-      ${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}
-      ${S.uni&&S.uni!=="other"?HOWTO.replace('<details class="howto">','<details class="howto" open>'):HOWTO}
-      ${DEMO?`<div class="demotry"><span>No Moodle link at hand? Try the guide with a sample calendar.</span><button class="pill primary" id="oSample">Use a sample calendar</button></div>`:""}
-      `;
-      if(src==="file") h+=`<div class="srcbox"><p class="hint">In Moodle: Calendar → Import or export calendars → Export calendar → Export. Then choose the downloaded file here.</p><button class="pill primary" id="oFile">Choose a calendar file</button>${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}</div>`;
-      if(src==="manual") h+=`<div class="srcbox"><p class="hint">Type each course you take. You can add deadlines and lecture times after.</p><button class="pill primary" id="oManual">Start typing my courses</button></div>`;
+      const U=uniOf(S.uni);
+      h+=`<h1>Let’s find your courses</h1>
+        <div class="field big"><label for="oUni">University</label><select id="oUni" class="inp"><option value="">Choose…</option>${UNIS.map(u=>`<option value="${u.id}" ${S.uni===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></div>
+        <div class="field big"><label for="oUrl">${U&&U.lms?esc(U.lms):"Moodle"} calendar link</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="Paste the link" value="${esc(S.cal.url)}"><button class="pill primary ${ONB.busy?"loading":""}" id="oFind" style="flex:none" ${ONB.busy?"disabled aria-busy=\"true\"":""}>${ONB.busy?'<span class="spin" aria-hidden="true"></span>Looking…':"Continue"}</button></div></div>
+        ${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}
+        ${HOWTO}
+        ${DEMO?`<button class="linkbtn" id="oSample">No link? Try a sample</button>`:""}
+        <div class="alt quiet"><span>Or:</span><button class="linkbtn" id="oFile">upload a calendar file</button><span>·</span><button class="linkbtn" id="oManual">type my courses</button></div>`;
     } else {
-      const cnt=c=>{const {map}=onbCats(ONB.text);return (map[c]||[]).length};
       const {map}=onbCats(ONB.text);
-      h+=`<p class="hint">Untick anything that isn’t a course you take. You can rename courses too.</p><div class="olist">`;
+      h+=`<h1>Your courses</h1><div class="olist">`;
       ONB.cats.forEach((c,i)=>{
-        const have=S.courses.some(x=>(x.moodle||x.name).toLowerCase()===c.toLowerCase());
-        h+=`<label class="orow ${ONB.picked[c]?"":"off"}"><input type="checkbox" data-pick="${i}" ${ONB.picked[c]?"checked":""} ${have?"disabled checked":""}><span class="dot" style="--c:${COLORS[i%COLORS.length].c}"></span><input class="inp" data-rename="${i}" dir="auto" value="${esc(ONB.names[c])}" ${have?"disabled":""}><small class="tnum">${have?"already added":`${(map[c]||[]).length} deadline${(map[c]||[]).length===1?"":"s"}`}</small></label>`;
+        const have=S.courses.some(x=>(x.moodle||x.name).toLowerCase()===c.toLowerCase()), n_=(map[c]||[]).length;
+        h+=`<label class="orow ${ONB.picked[c]?"":"off"}"><input type="checkbox" data-pick="${i}" ${ONB.picked[c]?"checked":""} ${have?"disabled checked":""}><span class="dot" style="--c:${COLORS[i%COLORS.length].c}"></span><input class="inp" data-rename="${i}" dir="auto" value="${esc(ONB.names[c])}" ${have?"disabled":""} aria-label="Course name"><small class="tnum">${have?"added":n_}</small></label>`;
       });
-      ONB.extra.forEach((x,j)=>{h+=`<div class="orow"><input type="checkbox" checked disabled><span class="dot" style="--c:${COLORS[(ONB.cats.length+j)%COLORS.length].c}"></span><input class="inp" data-extra="${j}" dir="auto" value="${esc(x)}"><button class="icon-btn" data-rmx="${j}" aria-label="Remove">${I.x}</button></div>`});
-      h+=`</div><button class="linkbtn" id="oAddX">+ Add another course</button>`;
+      ONB.extra.forEach((x,j)=>{h+=`<div class="orow"><input type="checkbox" checked disabled><span class="dot" style="--c:${COLORS[(ONB.cats.length+j)%COLORS.length].c}"></span><input class="inp" data-extra="${j}" dir="auto" value="${esc(x)}" placeholder="Course name"><button class="icon-btn" data-rmx="${j}" aria-label="Remove">${I.x}</button></div>`});
+      h+=`</div><button class="linkbtn" id="oAddX">+ Add a course</button>`;
     }
     const nPick=ONB.cats?ONB.cats.filter(c=>ONB.picked[c]).length+ONB.extra.filter(x=>x.trim()).length:0;
-    h+=`<div class="ofoot"><div class="alt"><button class="linkbtn" id="oRestore">Restore a backup</button><span>·</span><button class="linkbtn" id="oSkip">Skip setup</button></div>
-      ${ONB.cats?`<button class="pill primary" id="oNext1" ${nPick?"":"disabled"}>Add ${nPick} course${nPick===1?"":"s"} →</button>`:""}</div>`;
+    h+=ONB.cats?`<div class="ofoot"><button class="pill" id="oBack1">← Back</button><button class="pill primary" id="oNext1" ${nPick?"":"disabled"}>Next</button></div>`
+      :`<div class="ofoot quiet"><button class="linkbtn" id="oRestore">Restore a backup</button><button class="linkbtn" id="oSkip">Skip</button></div>`;
   }
   if(n===2){
-    h+=`<h1>Your deadlines</h1>`;
     if(!ONB.text){
-      h+=`<p class="lead">${S.cal.url?"Getting your deadlines…":"No calendar connected, so there are no deadlines to bring in. You can add tasks yourself any time with + Task."}</p>`;
+      h+=`<h1>Your deadlines</h1><p class="lead">${S.cal.url?'<span class="spin"></span> Getting them…':"No calendar connected. You can add tasks later."}</p>`;
       if(S.cal.url&&!ONB.busy){ONB.busy=true;fetchCalendar(S.cal.url).then(t=>{ONB.text=t}).catch(()=>{S.cal.url=""}).finally(()=>{ONB.busy=false;render()})}
     } else {
       const {map}=onbCats(ONB.text), td=iso(today());
       const mine=S.courses.filter(c=>c.moodle&&!c.archived);
-      let total=0;
-      h+=`<p class="lead">These are the deadlines from your courses. Taskal adds them and keeps them up to date.</p><div class="olist">`;
+      let total=0, rows="";
       mine.forEach(c=>{
         const evs=(map[Object.keys(map).find(k=>k.toLowerCase()===c.moodle.toLowerCase())]||[]).filter(ev=>{const d=ev.DTSTART||ev.DTEND;return ONB.past||!d||iso(d)>=td}).sort((a,b)=>(a.DTSTART||0)-(b.DTSTART||0));
-        total+=evs.length;
-        h+=`<div class="ogroup"><div class="ogh"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b><small class="tnum">${evs.length}</small></div>
-          ${evs.slice(0,4).map(ev=>{const d=ev.DTSTART||ev.DTEND;return `<div class="otask"><span dir="auto">${esc(cleanTitle(ev.SUMMARY||""))}</span><small class="tnum">${d?d.toLocaleDateString(LOC,{month:"short",day:"numeric"}):""}</small></div>`}).join("")}
-          ${evs.length>4?`<div class="otask more">+${evs.length-4} more</div>`:""}${evs.length?"":`<div class="otask more">Nothing coming up</div>`}</div>`;
+        total+=evs.length; const nx=evs[0]&&(evs[0].DTSTART||evs[0].DTEND);
+        rows+=`<div class="dl"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b><span class="tnum dln">${evs.length}</span><small class="tnum">${nx?"next "+esc(nx.toLocaleDateString(LOC,{day:"numeric",month:"short"})):""}</small></div>`;
       });
-      h+=`</div><label class="chk" style="margin-top:12px"><input type="checkbox" id="oPast" ${ONB.past?"checked":""}> Also add deadlines that already passed</label>
-        <p class="hint" style="margin-top:12px">Also use Perusall, Canvas, Google Classroom or lecture recordings? Connect them after setup from <b>⋯ → Connected platforms</b>.</p>
-        <div class="oremind"><b>When should Taskal remind you?</b><span class="hint">Pick as many as you like. You get one notification at each time, for every deadline that isn’t done yet.</span>${remPicker()}</div>`;
       ONB.total=total;
+      h+=`<h1>${total} deadline${total===1?"":"s"} found</h1><div class="dls">${rows}</div>
+        <label class="chk quiet" style="margin-top:10px"><input type="checkbox" id="oPast" ${ONB.past?"checked":""}> Include past ones</label>
+        <h2 class="sub2">Remind me</h2>${remPicker()}`;
     }
-    h+=`<div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="pill primary" id="oNext2" ${ONB.busy?"disabled":""}>${ONB.text&&ONB.total?`Add ${ONB.total} deadline${ONB.total===1?"":"s"}, then timetable →`:"Next: timetable →"}</button></div>`;
+    h+=`<div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="pill primary" id="oNext2" ${ONB.busy?"disabled":""}>Next</button></div>`;
   }
   if(n===3){
-    const s=sem();
-    h+=`<h1>Your timetable</h1><p class="lead">Add when each course meets. Then the Lectures page shows your week and you can tick off what you’ve seen.</p>
-      <div class="osem"><div class="field" style="margin:0"><label for="oStart">Semester starts</label><input id="oStart" class="inp" type="date" value="${esc(s.start)}"><span class="datehint tnum" id="oStartHint">${s.start?esc(longDate(parseISO(s.start))):""}</span></div>
-      <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
-      <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on Israeli holidays</label></div>
+    const s=sem(), end=s.start?addDays(weekStart(s,s.weeks-1),5):null;
+    h+=`<h1>Your week</h1>
+      <div class="semline"><span>${esc(s.name)} · ${s.start?esc(fmtShort(parseISO(s.start)))+" – "+esc(fmtShort(end)):"no dates"} · ${s.weeks} weeks${ONB.hol!==false?" · holidays off":""}</span><button class="linkbtn" id="oSemEdit">${ONB.semOpen?"Done":"Edit"}</button></div>
+      ${ONB.semOpen?`<div class="osem"><div class="field" style="margin:0"><label for="oStart">Starts</label><input id="oStart" class="inp" type="date" value="${esc(s.start)}"><span class="datehint tnum" id="oStartHint">${s.start?esc(longDate(parseISO(s.start))):""}</span></div>
+        <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
+        <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on holidays</label></div>`:""}
       ${catalogBox()}
-      <div class="ttcta alt2"><div><b>Have your timetable as a file or text?</b><span>From another university, or copied from your student portal.</span></div><button class="pill" id="oTT">Import a file or text</button></div>
-      <div class="addnc"><b>A course with no deadlines yet?</b><span class="hint">Add it here so it shows in your week${S.uni==="huji"?", by its course number":""}.</span>
-        <div class="row" style="flex-wrap:nowrap;gap:8px"><input id="oNewC" class="inp" dir="auto" placeholder="${S.uni==="huji"?"Course number, e.g. 77307":"Course name"}"><button class="pill" id="oNewCAdd">Add course</button></div><div id="oNewCRes"></div></div>
       <div class="olist">`;
-    activeCourses().forEach(c=>{
+    const inCat=c=>{const C=ONB.cat; return C&&C.loaded&&!C.applied&&C.info[courseNum(c)]};
+    activeCourses().filter(c=>!inCat(c)).forEach(c=>{
       const rows=ONB.times[c.id]||(ONB.times[c.id]=S.slots.filter(x=>x.course===c.id).map(x=>Object.assign({},x)));
       h+=`<div class="ogroup" data-c="${esc(c.id)}"><div class="ogh"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b></div>
         ${rows.map((r,j)=>`<div class="otime" data-j="${j}">
@@ -2219,10 +2230,12 @@ function renderSetup(){
           <select class="inp" data-tf="kind" aria-label="Type">${["Lecture","Tutorial","Lab","Seminar"].map(k=>`<option ${r.kind===k?"selected":""}>${k}</option>`).join("")}</select>
           <input class="inp" data-tf="room" value="${esc(r.room||"")}" placeholder="Room" aria-label="Room" dir="auto">
           <button class="icon-btn" data-rmt="${j}" aria-label="Remove">${I.x}</button></div>`).join("")}
-        <button class="linkbtn" data-addt="${esc(c.id)}">+ Add a meeting time</button></div>`;
+        <button class="linkbtn" data-addt="${esc(c.id)}">+ Time</button></div>`;
     });
-    if(!activeCourses().length) h+=`<p class="hint">No courses yet. You can add courses and their times later from the sidebar.</p>`;
-    h+=`</div><div class="ofoot"><button class="pill" id="oBack">← Back</button><div class="alt" style="margin-left:auto"><button class="linkbtn" id="oLater">I’ll do this later</button></div><button class="pill primary" id="oDone">Finish</button></div>`;
+    h+=`</div>
+      ${ONB.addOpen?`<div class="row addnc" style="flex-wrap:nowrap;gap:8px"><input id="oNewC" class="inp" dir="auto" placeholder="${S.uni==="huji"?"Course number, e.g. 77307":"Course name"}"><button class="pill" id="oNewCAdd">Add</button></div><div id="oNewCRes"></div>`:""}
+      <div class="alt quiet"><button class="linkbtn" id="oAddC">+ Add a course</button><span>·</span><button class="linkbtn" id="oTT">Paste or upload a timetable</button></div>
+      <div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="linkbtn" id="oLater" style="margin-left:auto">Later</button><button class="pill primary" id="oDone">Finish</button></div>`;
   }
   el.innerHTML=h+`</div>`;
   wireSetup(el,n);
@@ -2232,25 +2245,23 @@ function catalogBox(){
   if(S.uni!=="huji") return "";
   const C=ONB.cat||{}, nums=activeCourses().map(c=>({c,num:courseNum(c)}));
   const withNum=nums.filter(x=>x.num);
-  let h=`<div class="catbox"><div class="cath"><div><b>Find your timetable in ${esc(CATALOGS.huji.name)}</b><span>Taskal looks up each course by its number and shows its lecture and tutorial groups. Pick yours and the times fill in, with exam dates too.</span></div>
-    ${C.loaded?"":`<button class="pill primary" id="oCat" ${C.busy?"disabled":""}>${C.busy?'<span class="spin"></span>Looking up…':`Look up ${withNum.length} course${withNum.length===1?"":"s"}`}</button>`}</div>`;
+  let h=`<div class="catbox">${C.loaded?"":`<button class="pill primary catgo" id="oCat" ${C.busy?"disabled":""}>${C.busy?'<span class="spin"></span>Looking up…':"Fill in from the course catalog"}</button>`}`;
   if(C.err) h+=`<div class="result err">${esc(C.err)}</div>`;
   if(C.loaded){
-    withNum.forEach(({c,num})=>{const info=C.info[num]; if(!info){h+=`<div class="catc"><b dir="auto">${esc(c.name)}</b><small>Not found in this year’s catalog.</small></div>`;return}
+    withNum.forEach(({c,num})=>{const info=C.info[num]; if(!info) return;
       const per=semPeriod(), gs=info.groups.filter(g=>!g.period||g.period===per||g.period>2), kinds=[...new Set(gs.map(g=>g.kind))];
-      h+=`<div class="catc"><div class="catn"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b>${gs.some(g=>g.sessions.some(x=>x.recorded))?'<span class="badge">recorded</span>':""}</div>`;
+      h+=`<div class="catc"><div class="catn"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b>${gs.some(g=>g.sessions.some(x=>x.recorded))?'<span class="recd">REC</span>':""}</div>`;
       if(!gs.length) h+=`<small>No meeting times listed for this semester.</small>`;
       kinds.forEach(k=>{const opts=gs.filter(g=>g.kind===k), key=num+"|"+k, pick=C.pick[key];
         h+=`<div class="catk"><span class="lab">${esc({Lecture:"Lecture",Tutorial:"Tutorial",Lab:"Lab",Seminar:"Seminar"}[k]||k)}</span>${opts.length===1?`<span class="catone">${esc(groupWhen(opts[0]))}</span>`:
-          `<select class="inp" data-catpick="${esc(key)}"><option value="">Choose your group…</option>${opts.map(g=>`<option value="${esc(g.code)}" ${pick===g.code?"selected":""}>${esc(g.code)} · ${esc(groupWhen(g))}</option>`).join("")}</select>`}</div>`});
-      const ex=info.exams.filter(e=>!e.period||e.period===per); if(ex.length) h+=`<small class="catex">Exams: ${ex.map(e=>`<span dir="auto">${esc(e.name)}${e.moed===1?" · מועד א'":e.moed===2?" · מועד ב'":""}</span> ${esc(fmtDay(parseISO(e.date)))}`).join("; ")}</small>`;
+          `<select class="inp" data-catpick="${esc(key)}"><option value="">Your group?</option>${opts.map(g=>`<option value="${esc(g.code)}" ${pick===g.code?"selected":""}>${esc(g.code)} · ${esc(groupWhen(g))}</option>`).join("")}</select>`}</div>`});
+      const ex=info.exams.filter(e=>!e.period||e.period===per); if(ex.length) h+=`<small class="catex">Exams ${ex.map(e=>esc(fmtDay(parseISO(e.date)))).join(", ")}</small>`;
       h+=`</div>`;});
-    if(nums.some(x=>!x.num)) h+=`<small class="hint">No course number found for: ${nums.filter(x=>!x.num).map(x=>esc(x.c.name)).join(", ")}. Add their times below.</small>`;
-    h+=`<div class="row" style="gap:8px;margin-top:8px;align-items:center"><button class="pill primary" id="oCatApply" style="flex:none">Use these times</button><label class="chk"><input type="checkbox" id="oCatEx" ${C.exams!==false?"checked":""}> Add exam dates as tasks</label></div>`;
+    h+=C.applied?`<div class="result">Times added below.</div>`:`<div class="row" style="gap:12px;margin-top:4px;align-items:center"><button class="pill primary" id="oCatApply" style="flex:none">Use these times</button><label class="chk quiet"><input type="checkbox" id="oCatEx" ${C.exams!==false?"checked":""}> + exam dates</label></div>`;
   }
   return h+`</div>`;
 }
-const groupWhen=g=>g.sessions.length?g.sessions.map(x=>`${DAYS[x.weekday]} ${x.start}–${x.end}${x.recorded?" (recorded)":""}`).join(", "):"no times listed";
+const groupWhen=g=>g.sessions.length?g.sessions.map(x=>`${DAYS[x.weekday]} ${x.start}–${x.end}`).join(", "):"no times listed";
 async function loadCatalog(){
   ONB.cat={busy:true,info:{},pick:{},exams:true}; render();
   try{
@@ -2296,6 +2307,7 @@ function finishSetup(saveTimes){
   }
   S.setup=null; S.ui.mode=S.tasks.length||!S.slots.length?"tasks":"lectures"; S.ui.week=null; S.ui.course="all";
   Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:"",cat:null});
+  ONB.semOpen=false; ONB.addOpen=false; ONB.remOther=false;
   render(); scrollTo(0,0); updateSyncLabel(); toast("You’re all set");
 }
 function wireSetup(el,n){
@@ -2317,6 +2329,7 @@ function wireSetup(el,n){
     on("oManual",()=>{ONB.text="BEGIN:VCALENDAR\nEND:VCALENDAR";ONB.cats=[];ONB.extra=[""];render()});
     on("oAddX",()=>{ONB.extra.push("");render();const ins=el.querySelectorAll("[data-extra]");ins.length&&ins[ins.length-1].focus()});
     on("oSkip",()=>finishSetup(false));
+    on("oBack1",()=>{ONB.cats=null;ONB.text=null;render()});
     on("oRestore",()=>restore());
     el.querySelectorAll("[data-pick]").forEach(cb=>cb.onchange=()=>{ONB.picked[ONB.cats[+cb.dataset.pick]]=cb.checked;render()});
     el.querySelectorAll("[data-rename]").forEach(inp=>inp.oninput=()=>{ONB.names[ONB.cats[+inp.dataset.rename]]=inp.value});
@@ -2346,7 +2359,9 @@ function wireSetup(el,n){
     on("oLater",()=>finishSetup(false));
     on("oTT",importTimetable);
     on("oCat",loadCatalog); on("oCatApply",applyCatalog);
-    on("oNewCAdd",()=>addCourseNoTasks(el)); const nc=el.querySelector("#oNewC"); if(nc) nc.onkeydown=e=>{if(e.key==="Enter")addCourseNoTasks(el)};
+    on("oNewCAdd",()=>addCourseNoTasks(el));
+    on("oSemEdit",()=>{ONB.semOpen=!ONB.semOpen;render()});
+    on("oAddC",()=>{ONB.addOpen=true;render();const x=el.querySelector("#oNewC");x&&x.focus()}); const nc=el.querySelector("#oNewC"); if(nc) nc.onkeydown=e=>{if(e.key==="Enter")addCourseNoTasks(el)};
     el.querySelectorAll("[data-catpick]").forEach(x=>x.onchange=()=>{ONB.cat.pick[x.dataset.catpick]=x.value});
     const ce=el.querySelector("#oCatEx"); if(ce) ce.onchange=()=>{ONB.cat.exams=ce.checked};
     on("oDone",()=>finishSetup(true));
