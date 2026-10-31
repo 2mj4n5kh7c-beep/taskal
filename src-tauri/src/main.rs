@@ -30,6 +30,61 @@ async fn fetch_calendar(url: String) -> Result<String, String> {
     resp.text().await.map_err(|e| e.without_url().to_string())
 }
 
+/// Reads a university course catalog page (timetables, groups, exam dates).
+/// Only the catalog sites below can be reached, and the reply comes back as raw bytes (base64),
+/// because some universities still use Hebrew page encodings rather than UTF-8.
+const CATALOG_HOSTS: &[&str] = &[
+    "shnaton.huji.ac.il",
+    "sap.cheesefork.cf",
+    "arazim-project.com",
+    "courses.biu.ac.il",
+    "bgu4u.bgu.ac.il",
+];
+
+static CATALOG_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+
+#[derive(serde::Serialize)]
+struct CatalogReply {
+    status: u16,
+    url: String,
+    body: String,
+}
+
+#[tauri::command]
+async fn catalog_fetch(
+    url: String,
+    method: Option<String>,
+    form: Option<Vec<(String, String)>>,
+) -> Result<CatalogReply, String> {
+    use base64::Engine as _;
+    let parsed = reqwest::Url::parse(&url).map_err(|e| e.to_string())?;
+    let host = parsed.host_str().unwrap_or("");
+    if parsed.scheme() != "https" || !CATALOG_HOSTS.contains(&host) {
+        return Err("That catalog isn't supported.".into());
+    }
+    let client = CATALOG_CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .user_agent("Mozilla/5.0 (Taskal course catalog lookup)")
+            .cookie_store(true)
+            .timeout(std::time::Duration::from_secs(40))
+            .build()
+            .expect("http client")
+    });
+    let req = if method.as_deref() == Some("POST") {
+        client.post(parsed).form(&form.unwrap_or_default())
+    } else {
+        client.get(parsed)
+    };
+    let resp = req.send().await.map_err(|e| {
+        if e.is_timeout() { "The course catalog didn't answer in time. Try again in a minute.".to_string() }
+        else { format!("Couldn't reach the course catalog ({}).", e.without_url()) }
+    })?;
+    let status = resp.status().as_u16();
+    let final_url = resp.url().to_string();
+    let bytes = resp.bytes().await.map_err(|e| e.without_url().to_string())?;
+    Ok(CatalogReply { status, url: final_url, body: base64::engine::general_purpose::STANDARD.encode(&bytes) })
+}
+
 fn show_main(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -46,7 +101,7 @@ fn main() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--background"]),
         ))
-        .invoke_handler(tauri::generate_handler![fetch_calendar])
+        .invoke_handler(tauri::generate_handler![fetch_calendar, catalog_fetch])
         .setup(|app| {
             // Windows: a tray icon so Taskal can keep running (and reminding) with its window closed.
             #[cfg(not(target_os = "macos"))]

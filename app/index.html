@@ -739,6 +739,8 @@ h2.sub2{font-size:15px;font-weight:600;margin:20px 0 8px}
 
 .sess .top{gap:6px}.sess .time{white-space:nowrap}
 .sess .recbtn+.nb{width:24px;height:24px}
+
+.addnc{display:flex!important;flex-wrap:nowrap!important}.addnc .inp{flex:1;min-width:0}.addnc .pill{flex:none;width:auto}
 </style>
 </head>
 <body>
@@ -2097,28 +2099,120 @@ function applyUni(id){
   if(u&&u.A&&s){s.name="Semester A";s.start=u.A[0];s.weeks=Math.max(1,Math.ceil((parseISO(u.A[1])-parseISO(u.A[0]))/(7*864e5)));}
   if(u&&id==="other") ONB.hol=false;
 }
-/* ---------- university course catalog: weekly times, recordings and exam dates by course number ---------- */
-const CATALOGS={huji:{name:"the Hebrew University course catalog (שנתון)",base:"https://shnaton.huji.ac.il"}};
-const courseNum=c=>((c.moodle||"")+" "+c.name).match(/\b(\d{5})\b/)?.[1]||"";
+/* ---------- university course catalogs: weekly times, groups and exam dates by course number ---------- */
+const HE_DAY={"א":0,"ב":1,"ג":2,"ד":3,"ה":4,"ו":5,"ש":6,"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"שבת":6};
+const heDay=x=>{const k=String(x||"").replace(/^יום\s*/,"").replace(/['׳"]/g,"").trim(); return HE_DAY[k]??-1};
+const hm=x=>{const m=String(x).match(/(\d{1,2}):(\d{2})/); return m?pad(+m[1])+":"+m[2]:""};
+const dmy=x=>{const m=String(x).match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/); return m?`${m[3]}-${pad(+m[2])}-${pad(+m[1])}`:""};
 const catYear=()=>{const s=sem(); const d=s&&s.start?parseISO(s.start):today(); return d.getMonth()>=7?d.getFullYear()+1:d.getFullYear()};
 const semPeriod=()=>/\bB\b|ב'?$/i.test((sem()||{}).name||"")?2:1;
-async function catGet(path){
-  const url=CATALOGS.huji.base+path;
-  const text=IS_DESKTOP?await window.__TAURI__.core.invoke("fetch_calendar",{url}):await fetch(url).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.text()});
-  return JSON.parse(text);
-}
 const msTime=ms=>pad(Math.floor(ms/36e5))+":"+pad(Math.round(ms%36e5/6e4));
 const kindHe=t=>/תרגיל|תרגול/.test(t)?"Tutorial":/מעבדה/.test(t)?"Lab":/סמינר/.test(t)?"Seminar":"Lecture";
-/* look one course up: its name, groups (lecture / tutorial ...) with weekly times, and exam dates */
-async function catalogCourse(num){
-  const y=catYear(), list=await catGet(`/api/courses/code/${encodeURIComponent(num)}?year=${y}`), c=Array.isArray(list)?list[0]:list;
+/* fetch a catalog page: natively in the desktop app (no browser cross-site limits, any page encoding) */
+async function catRaw(url,opt){
+  opt=opt||{};
+  if(IS_DESKTOP){
+    const r=await window.__TAURI__.core.invoke("catalog_fetch",{url,method:opt.form?"POST":null,form:opt.form?Object.entries(opt.form):null});
+    if(r.status>=400) throw new Error("HTTP "+r.status);
+    const bin=atob(r.body), bytes=new Uint8Array(bin.length); for(let k=0;k<bin.length;k++) bytes[k]=bin.charCodeAt(k);
+    return {url:r.url,text:new TextDecoder(opt.enc||"utf-8").decode(bytes)};
+  }
+  const r=await fetch(url,opt.form?{method:"POST",body:new URLSearchParams(opt.form)}:{}); if(!r.ok) throw new Error("HTTP "+r.status);
+  return {url:r.url,text:new TextDecoder(opt.enc||"utf-8").decode(await r.arrayBuffer())};
+}
+const catJson=async url=>JSON.parse((await catRaw(url)).text);
+const catHtml=async(url,opt)=>new DOMParser().parseFromString((await catRaw(url,opt)).text,"text/html");
+const CAT_MEMO={}; const once=(k,f)=>CAT_MEMO[k]||(CAT_MEMO[k]=f().catch(e=>{delete CAT_MEMO[k];throw e}));
+const cellText=el=>el.textContent.replace(/\s+/g," ").trim();
+/* one group per kind with the same times is enough: "11, 12, 13 · Wed 14:30–16:30" */
+function mergeGroups(gs){
+  const out=[];
+  gs.forEach(g=>{ if(!g.sessions.length) return; const sig=g.kind+"|"+(g.period||"")+"|"+g.sessions.map(x=>x.weekday+x.start+x.end).sort().join(",");
+    const o=out.find(x=>x.sig===sig); if(o) o.code+=", "+g.code; else out.push(Object.assign({},g,{sig,code:String(g.code)})); });
+  return out;
+}
+/* course numbers as each university writes them */
+const NUM_RX={huji:/\b(\d{5})\b/,technion:/\b(\d{8}|\d{6})\b/,tau:/\b(\d{4})[-\s]?(\d{4})(?:[-\s]?\d{2})?\b/,biu:/\b(\d{2})-?(\d{3})(?:-?\d{2})?\b/,bgu:/\b(\d{3})[.\-\s]?(\d)[.\-\s]?(\d{4})\b/};
+function courseNum(c,uni){
+  uni=uni||S.uni; const m=((c.moodle||"")+" "+(c.name||"")).match(NUM_RX[uni]||NUM_RX.huji); if(!m) return "";
+  if(uni==="technion"){const d=m[1]; return d.length===6?"0"+d.slice(0,3)+"0"+d.slice(3):d}
+  if(uni==="tau"||uni==="biu") return m[1]+m[2];
+  if(uni==="bgu") return m[1]+"."+m[2]+"."+m[3];
+  return m[1];
+}
+/* Hebrew University: the official course catalog (shnaton.huji.ac.il) */
+const HUJI="https://shnaton.huji.ac.il";
+async function hujiCourse(num){
+  const y=catYear(), list=await catJson(HUJI+`/api/courses/code/${encodeURIComponent(num)}?year=${y}`), c=Array.isArray(list)?list[0]:list;
   if(!c||!c.id) return null;
   let groups=[], exams=[];
-  try{const g=await catGet(`/api/courses/groups-with-sessions?year=${y}&courseIds=${c.id}`); groups=(g[c.id]||[]).map(gr=>({code:gr.code,period:gr.period,kind:kindHe((gr.studySessionTypeName||{}).he||""),label:(gr.studySessionTypeName||{}).he||"",
+  try{const g=await catJson(HUJI+`/api/courses/groups-with-sessions?year=${y}&courseIds=${c.id}`); groups=(g[c.id]||[]).map(gr=>({code:gr.code,period:gr.period,kind:kindHe((gr.studySessionTypeName||{}).he||""),label:(gr.studySessionTypeName||{}).he||"",
     sessions:(gr.studySessions||[]).map(x=>({weekday:x.dayOfWeek,start:msTime(x.startTime),end:msTime(x.endTime),recorded:!!x.isRecorded,room:[(x.displayRoom||x.room||{}).name?.he,((x.displayRoom||x.room||{}).building||{}).name?.he].filter((v,i,a)=>v&&a.indexOf(v)===i).join(", ")})).filter(x=>x.start!==x.end)}))}catch(e){}
-  try{const a=await catGet(`/api/assignments?year=${y}&courseId=${c.id}`); (a||[]).forEach(x=>(x.schedules||[]).forEach(sc=>{if(sc.startTime) exams.push({name:(x.assignmentDefinition&&x.assignmentDefinition.name&&x.assignmentDefinition.name.he)||"Exam",moed:sc.moed,date:sc.startTime.slice(0,10),period:sc.period||x.period})}))}catch(e){}
-  return {num,name:(c.name&&(c.name.he||c.name.en))||num,nameEn:c.name&&c.name.en,period:c.coursePeriod,groups,exams};
+  try{const a=await catJson(HUJI+`/api/assignments?year=${y}&courseId=${c.id}`); (a||[]).forEach(x=>(x.schedules||[]).forEach(sc=>{if(sc.startTime) exams.push({name:(x.assignmentDefinition&&x.assignmentDefinition.name&&x.assignmentDefinition.name.he)||"Exam",moed:sc.moed,date:sc.startTime.slice(0,10),period:sc.period||x.period})}))}catch(e){}
+  return {num,name:(c.name&&(c.name.he||c.name.en))||num,nameEn:c.name&&c.name.en,period:c.coursePeriod,groups:mergeGroups(groups),exams};
 }
+/* Technion: the official SAP catalog as published each semester by sap.cheesefork.cf */
+async function technionCourse(num){
+  const file=`courses_${catYear()-1}_${semPeriod()===2?201:200}.json`;
+  const all=await once("tech-"+file,()=>catJson("https://sap.cheesefork.cf/"+file));
+  const c=all.find(x=>x.general["מספר מקצוע"]===num); if(!c) return null;
+  const by={};
+  (c.schedule||[]).forEach(e=>{const k=e["קבוצה"]+"|"+e["סוג"], g=by[k]||(by[k]={code:String(e["קבוצה"]),kind:kindHe(e["סוג"]),label:e["סוג"],sessions:[]});
+    const [a,b]=String(e["שעה"]||"").split("-").map(hm), wd=heDay(e["יום"]); if(wd>=0&&a&&b&&!g.sessions.some(x=>x.weekday===wd&&x.start===a)) g.sessions.push({weekday:wd,start:a,end:b,room:[e["בניין"],e["חדר"]].filter(Boolean).join(" ")})});
+  const exams=[]; [["מועד א","מבחן",1],["מועד ב","מבחן",2],["בוחן מועד א","בוחן",1],["בוחן מועד ב","בוחן",2],["בוחן מועד ג","בוחן",3]].forEach(([k,n,m])=>{const d=dmy(c.general[k]||""); if(d) exams.push({name:n,moed:m,date:d})});
+  return {num,name:c.general["שם מקצוע"]||num,groups:mergeGroups(Object.values(by)),exams};
+}
+/* Tel Aviv: the university's course search, as published per semester by arazim-project.com */
+async function tauCourse(num){
+  const file=`courses-${catYear()}${semPeriod()===2?"b":"a"}.json`;
+  const all=await once("tau-"+file,()=>catJson("https://arazim-project.com/data/"+file));
+  const c=all[num]; if(!c) return null;
+  const gs=[];
+  (c.groups||[]).forEach(g=>{const by={}; (g.lessons||[]).forEach(l=>{const k=kindHe(l.type||""), x=by[k]||(by[k]={code:g.group,kind:k,label:l.type,sessions:[]});
+    const [a,b]=String(l.time||"").split("-").map(hm), wd=heDay(l.day); if(wd>=0&&a&&b) x.sessions.push({weekday:wd,start:a,end:b,room:[l.building,l.room].filter(Boolean).join(" ")})}); gs.push(...Object.values(by))});
+  const exams=(c.exams||[]).map(e=>({name:/בוחן/.test(e.type||"")?"בוחן":"מבחן",moed:e.moed==="א"?1:e.moed==="ב"?2:3,date:dmy(e.date)})).filter(e=>e.date);
+  return {num,name:c.name||num,groups:mergeGroups(gs),exams};
+}
+/* Bar-Ilan: the official course search (courses.biu.ac.il) */
+async function biuCourse(num){
+  const base="https://courses.biu.ac.il/", d0=await catHtml(base), f=d0.forms[0];
+  if(!f) throw new Error("Bar-Ilan’s course search didn’t load.");
+  const form={}; [...f.elements].forEach(e=>{ if(!e.name||e.type==="submit") return; if(e.type==="checkbox"&&!e.checked) return; form[e.name]=e.value; });
+  const P="ctl00$ContentPlaceHolder1$"; form[P+"cmbYear"]=String(catYear()); form[P+"txLessonCode"]=num; form[P+"btnSearch"]="חיפוש";
+  const d=await catHtml(base,{form});
+  const rows=[...d.querySelectorAll("table tr")].map(tr=>[...tr.children].map(cellText)).filter(r=>r.length>=8&&/^\d+$/.test(r[0]));
+  if(!rows.length) return null;
+  const want=semPeriod()===2?/ב'/:/א'/;
+  const gs=rows.filter(r=>want.test(r[5])||/שנת/.test(r[5])).map(r=>{const days=r[6].split(",").map(heDay), times=r[7].match(/\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}/g)||[];
+    const sessions=days.map((wd,k)=>{const t=times[k]||times[0]; if(wd<0||!t) return null; let [a,b]=t.split("-").map(hm); if(a>b) [a,b]=[b,a]; return {weekday:wd,start:a,end:b,room:""}}).filter(Boolean);
+    return {code:r[2],kind:kindHe(r[4]),label:r[4],sessions}});
+  return {num,name:rows[0][1]||num,groups:mergeGroups(gs),exams:[]};
+}
+/* Ben-Gurion: the official course file (bgu4u.bgu.ac.il) */
+async function bguCourse(num){
+  const [dep,lvl,crs]=num.split("."), Y=String(catYear()), P=String(semPeriod());
+  const form={rc_rowid:"",lang:"he",st:"a",step:"3",rn_course:crs,rn_course_details:"",rn_course_department:dep,rn_course_degree_level:lvl,rn_course_ins:"0",rn_year:Y,rn_semester:P,oc_course_name:"",oc_end_time:"",oc_lecturer_first_name:"",oc_lecturer_last_name:"",oc_start_time:"",on_campus:"",on_common:"0",on_course:"",on_course_degree_level:"",on_course_degree_level_list:"",on_course_department:"",on_course_department_list:"",on_course_ins:"0",on_course_ins_list:"0",on_credit_points:"",on_hours:"",on_lang:"0",on_semester:P,on_year:Y};
+  const d=await catHtml("https://bgu4u.bgu.ac.il/pls/scwp/!app.ann",{form,enc:"windows-1255"});
+  const tables=[...d.querySelectorAll("table")].filter(t=>/זמני לימוד/.test(t.textContent)&&!t.querySelector("table table"));
+  if(!tables.length) return null;
+  const T=/יום\s*([א-ו])'?\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/, gs=[]; let cur=null;
+  [...tables[tables.length-1].querySelectorAll("tr")].forEach(tr=>{const cells=[...tr.children].map(cellText); if(cells[0]==="קבוצה") return;
+    let txt; if(cells.length>=4&&/^\d+$/.test(cells[0])){cur={code:cells[0],kind:kindHe(cells[1]),label:cells[1],sessions:[]};gs.push(cur);txt=cells[3]} else txt=cells.join(" ");
+    if(!cur) return; const room=((txt.match(/מקום לימוד:\s*(.*?)(אופן לימוד|$)/)||[])[1]||"").replace(/\[\d+\]/g,"").replace(/\s+/g," ").trim();
+    (txt.match(new RegExp(T.source,"g"))||[]).forEach(m=>{const x=m.match(T); cur.sessions.push({weekday:heDay(x[1]),start:hm(x[2]),end:hm(x[3]),room})})});
+  const all=cellText(d.body), name=(all.match(/שם הקורס:\s*(.+?)\s*(אתר:|מוסד:)/)||[])[1]||num;
+  const exams=[], et=[...d.querySelectorAll("table")].filter(t=>/תאריך ושעת התחלה/.test(t.textContent)&&!t.querySelector("table table")).pop();
+  if(et) [...et.querySelectorAll("tr")].forEach(tr=>{const c=[...tr.children].map(cellText), date=dmy(c[2]||""); if(!date) return; const m=c[1]||""; const quiz=/בוחן/.test(m); exams.push({name:quiz?"בוחן":"מבחן",moed:quiz?+((m.match(/\d/)||[1])[0]):/^א/.test(m)?1:/^ב/.test(m)?2:3,date})});
+  return {num,name,groups:mergeGroups(gs),exams};
+}
+const CATALOGS={
+  huji:{get:hujiCourse,example:"77307"},
+  technion:{get:technionCourse,example:"02340114"},
+  tau:{get:tauCourse,example:"0366-1100"},
+  biu:{get:biuCourse,example:"88132"},
+  bgu:{get:bguCourse,example:"201.1.1011"}
+};
+async function catalogCourse(num){const C=CATALOGS[S.uni]; return C?C.get(num):null}
 function guessSemester(){
   const t=today(), y=t.getFullYear(), m=t.getMonth();
   const nextSunday=d=>{const x=new Date(d);x.setDate(x.getDate()+((7-x.getDay())%7));return x};
@@ -2242,7 +2336,7 @@ function renderSetup(){
         <button class="linkbtn" data-addt="${esc(c.id)}">+ Time</button></div>`;
     });
     h+=`</div>
-      ${ONB.addOpen?`<div class="row addnc" style="flex-wrap:nowrap;gap:8px"><input id="oNewC" class="inp" dir="auto" placeholder="${S.uni==="huji"?"Course number, e.g. 77307":"Course name"}"><button class="pill" id="oNewCAdd">Add</button></div><div id="oNewCRes"></div>`:""}
+      ${ONB.addOpen?`<div class="row addnc" style="flex-wrap:nowrap;gap:8px"><input id="oNewC" class="inp" dir="auto" placeholder="${CATALOGS[S.uni]?"Course number, e.g. "+CATALOGS[S.uni].example:"Course name"}"><button class="pill" id="oNewCAdd">Add</button></div><div id="oNewCRes"></div>`:""}
       <div class="alt quiet"><button class="linkbtn" id="oAddC">+ Add a course</button><span>·</span><button class="linkbtn" id="oTT">Paste or upload a timetable</button></div>
       <div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="linkbtn" id="oLater" style="margin-left:auto">Later</button><button class="pill primary" id="oDone">Finish</button></div>`;
   }
@@ -2251,7 +2345,7 @@ function renderSetup(){
 }
 /* the catalog panel on the timetable step: pick your groups, Taskal fills in the times */
 function catalogBox(){
-  if(S.uni!=="huji") return "";
+  if(!CATALOGS[S.uni]) return "";
   const C=ONB.cat||{}, nums=activeCourses().map(c=>({c,num:courseNum(c)}));
   const withNum=nums.filter(x=>x.num);
   let h=`<div class="catbox">${C.loaded?"":`<button class="pill primary catgo" id="oCat" ${C.busy?"disabled":""}>${C.busy?'<span class="spin"></span>Looking up…':"Fill in from the course catalog"}</button>`}`;
@@ -2285,8 +2379,9 @@ const groupWhen=g=>g.sessions.length?g.sessions.map(x=>`${DAYS[x.weekday]} ${x.s
 async function loadCatalog(){
   ONB.cat={busy:true,info:{},pick:{},exams:true}; render();
   try{
-    const nums=[...new Set(activeCourses().map(courseNum).filter(Boolean))];
-    for(const n of nums){ try{ONB.cat.info[n]=await catalogCourse(n)}catch(e){ if(!IS_DESKTOP) throw new Error("The web version can’t read the course catalog directly. Use the Taskal desktop app, or import your timetable as text."); } }
+    const nums=[...new Set(activeCourses().map(c=>courseNum(c)).filter(Boolean))];
+    let fails=0; for(const n of nums){ try{ONB.cat.info[n]=await catalogCourse(n)}catch(e){ fails++; if(!IS_DESKTOP) throw new Error("The web version can’t read the course catalog. Use the Taskal desktop app, or paste your timetable."); } }
+    if(fails&&fails===nums.length) throw new Error("Couldn’t reach the course catalog. Check your internet connection and try again.");
     ONB.cat.loaded=true;
   }catch(e){ONB.cat.err=e.message}
   ONB.cat.busy=false; render();
@@ -2297,7 +2392,7 @@ function applyCatalog(){
     const gs=info.groups.filter(g=>!g.period||g.period===per||g.period>2), rows=ONB.times[c.id]||(ONB.times[c.id]=[]);
     [...new Set(gs.map(g=>g.kind))].forEach(k=>{const opts=gs.filter(g=>g.kind===k), g=opts.length===1?opts[0]:opts.find(x=>x.code===C.pick[num+"|"+k]); if(!g) return;
       g.sessions.forEach(x=>{ if(rows.some(r=>+r.weekday===x.weekday&&r.start===x.start)) return; rows.push({id:uid(),weekday:x.weekday,start:x.start,end:x.end,kind:k,room:x.room,recorded:x.recorded}); n++; });});
-    if(C.exams!==false) info.exams.filter(e=>!e.period||e.period===per).forEach(e=>{const title=`${e.name}${e.moed===1?" · מועד א'":e.moed===2?" · מועד ב'":""}`, d=parseISO(e.date); d.setHours(9,0,0,0);
+    if(C.exams!==false) info.exams.filter(e=>!e.period||e.period===per).forEach(e=>{const title=`${e.name}${e.name==="בוחן"?(e.moed>1?" "+e.moed:""):e.moed===1?" · מועד א'":e.moed===2?" · מועד ב'":e.moed===3?" · מועד ג'":""}`, d=parseISO(e.date); d.setHours(9,0,0,0);
       if(!S.tasks.some(t=>t.course===c.id&&t.title===title)){S.tasks.push({id:uid(),uid:"cat-"+num+"-"+e.name+"-"+e.moed,done:false,title,course:c.id,due:d.toISOString(),notes:"From the course catalog. Check the exact time and room in your student portal.",link:"",tentative:true});ex++}});
   });
   C.applied=true; render(); toast(`Filled in ${n} weekly time${n===1?"":"s"}${ex?` and ${ex} exam date${ex===1?"":"s"}`:""}`);
@@ -2305,11 +2400,12 @@ function applyCatalog(){
 async function addCourseNoTasks(el){
   const v=el.querySelector("#oNewC").value.trim(), res=el.querySelector("#oNewCRes"); if(!v) return;
   let name=v, info=null;
-  if(S.uni==="huji"&&/^\d{5}$/.test(v)){ const done=busy(el.querySelector("#oNewCAdd"),"Looking up…"); try{info=await catalogCourse(v)}catch(e){} done();
-    if(!info){res.innerHTML=`<div class="result err">Couldn’t find ${esc(v)} in this year’s catalog${IS_DESKTOP?"":" (the web version can’t reach it; type the name instead)"}.</div>`;return} name=`${v} ${info.name}`; }
+  const num=CATALOGS[S.uni]?courseNum({name:v}):"";
+  if(num){ const done=busy(el.querySelector("#oNewCAdd"),"Looking up…"); try{info=await catalogCourse(num)}catch(e){} done();
+    if(!info){res.innerHTML=`<div class="result err">Couldn’t find ${esc(v)} in this semester’s catalog${IS_DESKTOP?"":" (the web version can’t reach it; type the name instead)"}.</div>`;return} name=`${v} ${info.name}`; }
   if(activeCourses().some(c=>norm(c.name)===norm(name))){res.innerHTML=`<div class="result">That course is already in your list.</div>`;return}
   const c={id:uid(),name,color:COLORS[S.courses.length%COLORS.length].c,semester:S.activeSemester,archived:false}; S.courses.push(c);
-  if(info&&ONB.cat&&ONB.cat.loaded){ONB.cat.info[v]=info; ONB.cat.applied=false;}
+  if(info&&ONB.cat&&ONB.cat.loaded){ONB.cat.info[num]=info; ONB.cat.applied=false;}
   render(); toast("Added "+name);
 }
 function finishSetup(saveTimes){
