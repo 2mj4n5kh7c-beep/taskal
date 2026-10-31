@@ -731,6 +731,14 @@ h2.sub2{font-size:15px;font-weight:600;margin:20px 0 8px}
 .addnc{margin:10px 0 0}
 
 .dl b,.orow .inp,.ogh b,.catn b{text-align:left;unicode-bidi:plaintext}
+
+.sess .recbtn{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--accent);flex:none;margin-left:auto;text-decoration:none}
+.sess .recbtn:hover{filter:brightness(1.1)}
+.sess .recbtn+.nb{margin-left:4px}
+.sess.tg-s.short .recbtn{width:20px;height:20px}
+
+.sess .top{gap:6px}.sess .time{white-space:nowrap}
+.sess .recbtn+.nb{width:24px;height:24px}
 </style>
 </head>
 <body>
@@ -1327,7 +1335,7 @@ function renderLectures(){
   }
   if(S.ui.lecView==="week"&&innerWidth>820){
     h+=timeGrid(s,ws,slots);
-    h+=`<div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap a session to mark it seen. Use the note icon for things like “seen till 00:57”.</p></div>`;
+    h+=`<div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap to mark seen · ▶ opens the recording · note icon for “seen till 00:57”</p></div>`;
   } else if(S.ui.lecView==="week"){
     const used=new Set(slots.map(x=>x.weekday)); let days=[0,1,2,3,4]; if(used.has(5)) days.push(5); if(used.has(6)) days.push(6);
     const t=today();
@@ -1340,15 +1348,15 @@ function renderLectures(){
       list.forEach(sl=>{
         const c=course(sl.course), k=skey(sl,date), seen=!!S.seen[k], note=S.notes[k], future=date>t;
         h+=`<div class="sess ${seen?"seen":""} ${future?"future":""} ${off?"off":""}" style="--c:${esc(c.color)}" ${off?"":`data-seen="${esc(k)}" role="button" tabindex="0" aria-pressed="${seen}" aria-label="${esc(c.name)} ${DAYS_LONG[d]} ${sl.start}: ${seen?"seen":"not seen"}"`}>
-          <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(sl.start)}–${esc(sl.end)}</span>${off?"":`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
+          <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(sl.start)}–${esc(sl.end)}</span>${off?"":recBtn(sl,date)+`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
           <div class="cn" dir="auto">${esc(c.name)}</div>
-          <div class="sub">${sl.kind&&sl.kind!=="Lecture"?`<span class="kind">${esc(sl.kind)}</span>`:""}${sl.room?`<span dir="auto">${esc(sl.room)}</span>`:""}${(S.recs[sl.course]||{})[iso(date)]?`<a class="watch" href="${esc(S.recs[sl.course][iso(date)].link)}" target="_blank" rel="noopener" title="${esc(S.recs[sl.course][iso(date)].title)}">▶ Watch</a>`:""}</div>
+          <div class="sub">${sl.kind&&sl.kind!=="Lecture"?`<span class="kind">${esc(sl.kind)}</span>`:""}${sl.room?`<span dir="auto">${esc(sl.room)}</span>`:""}</div>
           ${note?`<div class="note" dir="auto">${esc(note)}</div>`:""}
         </div>`;
       });
       h+=`</div>`;
     });
-    h+=`</div><div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap a session to mark it seen. Use the note icon for things like “seen till 00:57”.</p></div>`;
+    h+=`</div><div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap to mark seen · ▶ opens the recording · note icon for “seen till 00:57”</p></div>`;
   } else {
     const t=today(), sorted=slots.slice().sort((a,b)=>a.course.localeCompare(b.course)||a.weekday-b.weekday||a.start.localeCompare(b.start));
     h+=`<div class="matrix-card glass"><table class="matrix"><thead><tr><th></th>${Array.from({length:s.weeks},(_,i)=>`<th class="tnum ${i===cur?"now":""}" title="${fmtShort(weekStart(s,i))}">${i===cur?"Now":i+1}</th>`).join("")}</tr></thead><tbody>`;
@@ -1400,7 +1408,7 @@ function timeGrid(s,ws,slots){
       const st=toMin(sl.start), en=toMin(sl.end);
       const short=en-st<=75;
       h+=`<div class="sess tg-s ${short?"short":""} ${seen?"seen":""} ${future?"future":""} ${off?"off":""}" title="${esc(c.name)} · ${esc(sl.start)}–${esc(sl.end)}${note?" · "+esc(note):""}" style="--c:${esc(c.color)};top:${pct(st)};height:calc(${((en-st)/span*100).toFixed(3)}% - 4px);left:calc(${(pl.lane/pl.n*100).toFixed(3)}% + 3px);width:calc(${(100/pl.n).toFixed(3)}% - 6px)" ${off?"":`data-seen="${esc(k)}" role="button" tabindex="0" aria-pressed="${seen}" aria-label="${esc(c.name)} ${DAYS_LONG[d]} ${sl.start}: ${seen?"seen":"not seen"}"`}>
-        <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(short?sl.start:sl.start+"–"+sl.end)}</span>${sl.recorded&&!(S.recs[sl.course]||{})[iso(date)]?`<span class="recd" title="Recorded (from the course catalog)">REC</span>`:""}${short?`<span class="cn" dir="auto">${esc(c.name)}</span>`:""}${off?"":`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
+        <div class="top"><span class="ring">${seen?I.check:""}</span><span class="time tnum">${esc(short?sl.start:sl.start+"–"+sl.end)}</span>${sl.recorded&&!recBtn(sl,date)?`<span class="recd" title="Recorded (from the course catalog)">REC</span>`:""}${short?`<span class="cn" dir="auto">${esc(c.name)}</span>`:""}${off?"":recBtn(sl,date)+`<button class="nb" data-note="${esc(k)}" aria-label="Add a note" title="Note">${I.note}</button>`}</div>
         ${short?"":`<div class="cn" dir="auto">${esc(c.name)}</div>`}
         <div class="sub">${sl.kind&&sl.kind!=="Lecture"?`<span class="kind">${esc(sl.kind)}</span>`:""}${sl.room?`<span dir="auto">${esc(sl.room)}</span>`:""}</div>
         ${note?`<div class="note" dir="auto">${esc(note)}</div>`:""}
@@ -1577,6 +1585,7 @@ function editCourse(id){
     <div class="field"><label for="cName">Name</label><input id="cName" class="inp" dir="auto" value="${esc(c.name)}" placeholder="Classical Mechanics"></div>
     <div class="row"><div class="field"><label for="cSem">Semester</label><select id="cSem" class="inp">${S.semesters.map(s=>`<option value="${esc(s.id)}" ${s.id===c.semester?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div>
     <div class="field" style="justify-content:flex-end"><label class="chk"><input type="checkbox" id="cArch" ${c.archived?"checked":""}> Archived</label></div></div>
+    <div class="field"><label for="cRec">Recordings link <span class="hint" style="font-weight:400">(optional)</span></label><input id="cRec" class="inp" type="url" value="${esc(c.recLink||"")}" placeholder="${(uniOf(S.uni)||{}).panopto&&courseNum(c)?"Not needed: Taskal finds each lecture in Panopto":"Panopto folder or Moodle page with the recordings"}"></div>
     <div class="field"><span class="lab">Color</span><div class="swatches" id="cSw">${COLORS.map(x=>`<button class="sw" style="--c:${x.c}" data-c="${x.c}" aria-label="${x.n}" aria-pressed="${x.c===color}"></button>`).join("")}</div></div>
     <div class="field"><span class="lab">Weekly lectures and tutorials</span><div id="cSlots"></div><button class="pill" id="cAddSlot" style="align-self:flex-start">+ Add a weekly time</button></div>
     <div class="foot">${id?`<button class="pill danger left" id="cDel">Delete course</button>`:""}<button class="pill" id="cCancel">Cancel</button><button class="pill primary" id="cSave">Save</button></div>`);
@@ -1595,7 +1604,7 @@ function editCourse(id){
     if(S.ui.course===id)S.ui.course="all";closeModal();render();toast("Course deleted",{undo:snapC})});
   m.querySelector("#cSave").onclick=()=>{
     const name=m.querySelector("#cName").value.trim(); if(!name){m.querySelector("#cName").focus();return}
-    const v={name,color,semester:m.querySelector("#cSem").value,archived:m.querySelector("#cArch").checked};
+    const v={name,color,semester:m.querySelector("#cSem").value,archived:m.querySelector("#cArch").checked,recLink:(m.querySelector("#cRec").value||"").trim()};
     let cid=id; if(id) Object.assign(c,v); else {cid=uid();S.courses.push(Object.assign({id:cid},v))}
     S.slots=S.slots.filter(x=>x.course!==cid).concat(slots.filter(x=>x.start&&x.end).map(x=>Object.assign(x,{course:cid,id:x.id||uid()})));
     if(v.archived&&S.ui.course===cid) S.ui.course="all";
@@ -2070,7 +2079,7 @@ function sampleIcs(){
 /* ---------- setup guide: 1 courses → 2 tasks → 3 timetable ---------- */
 /* universities: which system they use and their published semester dates (2026-27, from each university's academic calendar) */
 const UNIS=[
-  {id:"huji",name:"Hebrew University of Jerusalem",lms:"Moodle",A:["2026-10-11","2027-01-15"]},
+  {id:"huji",name:"Hebrew University of Jerusalem",lms:"Moodle",A:["2026-10-11","2027-01-15"],panopto:"huji.cloud.panopto.eu"},
   {id:"tau",name:"Tel Aviv University",lms:"Moodle",A:["2026-10-18","2027-01-18"]},
   {id:"technion",name:"Technion",lms:"Moodle",A:["2026-10-28","2027-02-02"]},
   {id:"biu",name:"Bar-Ilan University",lms:"Moodle",A:["2026-10-11","2027-01-17"]},
@@ -2261,6 +2270,17 @@ function catalogBox(){
   }
   return h+`</div>`;
 }
+/* the recording of one meeting: exact link from a connected feed, else a Panopto search for "<course> <date> <type>", else the course's recordings link */
+const REC_WORD={Lecture:"שעור",Tutorial:"תרגיל",Lab:"מעבדה",Seminar:"סמינר"};
+function recFor(sl,date){
+  const d=iso(date), R=(S.recs[sl.course]||{})[d]; if(R&&R.link) return {url:R.link,title:R.title||"Watch the recording",exact:true};
+  const c=course(sl.course); if(!c) return null;
+  const host=c.panopto||(uniOf(S.uni)||{}).panopto, num=courseNum(c);
+  if(host&&num){const q=`"${num} ${d}${REC_WORD[sl.kind]?" "+REC_WORD[sl.kind]:""}"`; return {url:`https://${host}/Panopto/Pages/Sessions/List.aspx#query=${encodeURIComponent(q)}`,title:`Open the recording (${num} ${d})`}}
+  if(c.recLink) return {url:c.recLink,title:"Open the course recordings"};
+  return null;
+}
+const recBtn=(sl,date)=>{ if(date>today()) return ""; const r=recFor(sl,date); return r?`<a class="recbtn" href="${esc(r.url)}" target="_blank" rel="noopener" title="${esc(r.title)}" aria-label="${esc(r.title)}"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg></a>`:""; };
 const groupWhen=g=>g.sessions.length?g.sessions.map(x=>`${DAYS[x.weekday]} ${x.start}–${x.end}`).join(", "):"no times listed";
 async function loadCatalog(){
   ONB.cat={busy:true,info:{},pick:{},exams:true}; render();
@@ -2511,6 +2531,7 @@ $("#side").addEventListener("click",e=>{
 });
 $("#side").addEventListener("dblclick",e=>{const b=e.target.closest("[data-course]");if(b&&b.dataset.course!=="all")editCourse(b.dataset.course)});
 $("#main").addEventListener("click",e=>{
+  if(e.target.closest("a[href]")) return;
   const nb=e.target.closest("[data-note]"); if(nb){e.stopPropagation();editNote(nb.dataset.note);return}
   const tv=e.target.closest("[data-tv]"); if(tv){S.ui.taskView=tv.dataset.tv;render();return}
   const fc=e.target.closest("[data-filter]"); if(fc){S.ui.filter=S.ui.filter===fc.dataset.filter?null:fc.dataset.filter;render();return}
