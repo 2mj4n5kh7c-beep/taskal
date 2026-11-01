@@ -221,6 +221,7 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .cal-t{--c:var(--accent);display:flex;align-items:center;gap:5px;border:0;border-radius:7px;padding:3px 6px;font-size:11.5px;text-align:left;min-width:0;background:color-mix(in srgb,var(--c) 22%,var(--glass-strong))}
 .cal-t .dot{width:7px;height:7px}
 .cal-t .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.task.skipped{opacity:.6}
 .cal-t.done .tt{text-decoration:line-through;color:var(--muted)}
 .cal-t.late{box-shadow:inset 0 0 0 1px var(--danger)}
 .cal-more{border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:600;text-align:left;padding:0 6px}
@@ -971,7 +972,7 @@ function normalize(v){
   v.tasks=v.tasks.filter(t=>!(t.uid&&/\b(attendance|attendence)\b|נוכחות/i.test(t.title||"")));
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
   v.uni=v.uni||""; v.feeds=v.feeds||[]; v.recs=v.recs||{};
-  v.ui=Object.assign({q:"",filter:null,density:"compact",taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false},v.ui||{});
+  v.ui=Object.assign({q:"",filter:null,density:"compact",taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false,showSkipped:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
   if(!v.palette2){ // move courses onto the calmer colour set, keeping each course distinct
     const pal=COLORS.map(x=>x.c); let i=0;
@@ -1039,8 +1040,8 @@ function filteredTasks(){
   return visibleTasks().filter(t=>{
     if(q){const c=course(t.course);const hay=(t.title+" "+(c?c.name:"")+" "+(t.notes||"")).toLowerCase(); if(!q.split(/\s+/).every(w=>hay.includes(w))) return false;}
     const d=t.due?Date.parse(t.due):null;
-    if(f==="week") return !t.done&&d!==null&&d>=now&&d<now+7*864e5;
-    if(f==="overdue") return !t.done&&d!==null&&d<now;
+    if(f==="week") return !t.done&&!t.skip&&d!==null&&d>=now&&d<now+7*864e5;
+    if(f==="overdue") return !t.done&&!t.skip&&d!==null&&d<now;
     if(f==="est") return !!t.tentative;
     if(f==="link") return !!(t.link||firstUrl(t.notes));
     if(f==="changed") return !!recentChange(t);
@@ -1114,7 +1115,7 @@ function renderBar(){
 }
 function renderSide(){
   const act=activeCourses();
-  const open=S.tasks.filter(t=>!t.done);
+  const open=S.tasks.filter(t=>!t.done&&!t.skip);
   const cnt=id=>open.filter(t=>t.course===id).length;
   const allCnt=open.filter(t=>!t.course||act.some(c=>c.id===t.course)).length;
   let h=`<h3>${esc(sem()?sem().name:"Courses")}</h3>`;
@@ -1150,15 +1151,15 @@ function taskCard(t){
   const notes=link&&!t.link?String(t.notes).replace(link,"").replace(/(^|\n)\s*(Moodle|Canvas)\s*:\s*(\n|$)/g,"$1").trim():t.notes;
   let dueTxt="";
   if(due){
-    const cls=!t.done&&due<now?"late":(!t.done&&due-now<864e5?"soon":"");
+    const cls=!t.done&&!t.skip&&due<now?"late":(!t.done&&!t.skip&&due-now<864e5?"soon":"");
     dueTxt=`<span class="${cls}" title="${esc(due.toLocaleString(LOC,{weekday:"long",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}))}">${I.clock} ${rel(due)} · ${due.toLocaleDateString(LOC,{weekday:"short",day:"numeric",month:"short"})}${due.getHours()||due.getMinutes()?" "+pad(due.getHours())+":"+pad(due.getMinutes()):""}</span>`;
   }
-  const late=!t.done&&due&&due<now, soon=!t.done&&due&&!late&&due-now<864e5;
-  return `<article class="task ${t.done?"done":""} ${late?"is-late":""} ${soon?"is-soon":""}" style="--c:${esc(colorOf(t.course))}" data-open="${esc(t.id)}" tabindex="0" aria-label="${esc(t.title)}, open details">
+  const late=!t.done&&!t.skip&&due&&due<now, soon=!t.done&&due&&!late&&due-now<864e5;
+  return `<article class="task ${t.done?"done":""} ${t.skip&&!t.done?"skipped":""} ${late?"is-late":""} ${soon?"is-soon":""}" style="--c:${esc(colorOf(t.course))}" data-open="${esc(t.id)}" tabindex="0" aria-label="${esc(t.title)}, open details">
     <button class="check" data-toggle="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Mark as not done":"Mark as done"}">${t.done?I.check:""}</button>
     <div style="min-width:0">
       <div class="t" dir="auto">${esc(t.title)}</div>
-      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${recentChange(t)==="new"?'<span class="badge chg">new</span>':recentChange(t)==="moved"?`<span class="badge chg" title="Was ${esc(new Date(t.chg.from).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}))}">moved</span>`:""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}${notes?`<span class="hasnote" title="${esc(String(notes).slice(0,200))}">${I.hasnote}</span>`:""}</div>
+      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${t.skip&&!t.done?'<span class="badge">skipped</span>':""}${recentChange(t)==="new"?'<span class="badge chg">new</span>':recentChange(t)==="moved"?`<span class="badge chg" title="Was ${esc(new Date(t.chg.from).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}))}">moved</span>`:""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}${notes?`<span class="hasnote" title="${esc(String(notes).slice(0,200))}">${I.hasnote}</span>`:""}</div>
       ${notes?`<div class="notes" dir="auto">${notesHtml(notes)}</div>`:""}
     </div>
     <div class="acts"><button data-edittask="${esc(t.id)}" aria-label="Edit task" title="Edit">${I.edit}</button></div>
@@ -1167,7 +1168,7 @@ function taskCard(t){
 function renderTasks(){
   const base=visibleTasks(), all=filteredTasks(), now=new Date(), week=new Date(now.getTime()+7*864e5);
   const narrowing=!!((S.ui.q||"").trim()||S.ui.filter);
-  const open=all.filter(t=>!t.done).sort((a,b)=>(a.due?Date.parse(a.due):9e15)-(b.due?Date.parse(b.due):9e15));
+  const open=all.filter(t=>!t.done&&!t.skip).sort((a,b)=>(a.due?Date.parse(a.due):9e15)-(b.due?Date.parse(b.due):9e15));
   const groups=[
     ["Overdue",open.filter(t=>t.due&&new Date(t.due)<now)],
     ["Next 7 days",open.filter(t=>t.due&&new Date(t.due)>=now&&new Date(t.due)<week)],
@@ -1175,6 +1176,7 @@ function renderTasks(){
     ["No date",open.filter(t=>!t.due)]
   ];
   const done=all.filter(t=>t.done).sort((a,b)=>Date.parse(b.due||0)-Date.parse(a.due||0));
+  const skipped=all.filter(t=>!t.done&&t.skip).sort((a,b)=>Date.parse(b.due||0)-Date.parse(a.due||0));
   let h=banner();
   {const oc=open.length, cn=S.ui.course==="all"?"All courses":((course(S.ui.course)||{}).name||"Tasks");
   h+=`<div class="viewbar"><div class="vh"><h2 class="vt"><span dir="auto">${esc(cn)}</span><small class="tnum">${oc} open</small></h2><button class="pill primary sm" data-act="addtask" title="New task with all the details">+ Task</button></div><div class="tabs" role="group" aria-label="Tasks view"><button data-tv="list" aria-pressed="${S.ui.taskView!=="calendar"}">${I.list}List</button><button data-tv="calendar" aria-pressed="${S.ui.taskView==="calendar"}">${I.grid}Calendar</button></div></div>`;
@@ -1182,7 +1184,7 @@ function renderTasks(){
     <div class="chips" role="group" aria-label="Filter">${FILTERS.map(([k,l])=>`<button type="button" class="chip" data-filter="${k}" aria-pressed="${S.ui.filter===k}">${l}</button>`).join("")}</div>
     ${S.ui.taskView!=="calendar"?`<button type="button" class="linkbtn dens" data-act="density" title="Change row size">${S.ui.density==="comfortable"?"Compact rows":"Roomy rows"}</button>`:""}</div>`;}
   if(S.ui.taskView!=="calendar") h+=quickAddHtml();
-  if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all); fitCal(); keepSearchFocus(); return; }
+  if(S.ui.taskView==="calendar"){ $("#main").innerHTML=h+taskCalendar(all.filter(t=>!t.skip)); fitCal(); keepSearchFocus(); return; }
   if(!all.length&&narrowing&&base.length){
     h+=`<div class="empty glass"><strong>Nothing matches${S.ui.q?` “${esc(S.ui.q)}”`:""}</strong>Try other words, or clear the search and filters.<div style="margin-top:14px"><button class="pill" data-act="clearfind">Clear search</button></div></div>`;
   } else if(!all.length){
@@ -1195,6 +1197,10 @@ function renderTasks(){
   if(done.length){
     h+=`<div class="section-h"><h2>Done</h2><span class="n tnum">${done.length}</span><button class="pill" style="margin-left:auto;padding:4px 12px;font-size:12px" data-act="toggledone">${S.ui.showDone?"Hide":"Show"}</button></div>`;
     if(S.ui.showDone||narrowing) h+=`<div class="list">${done.map(taskCard).join("")}</div>`;
+  }
+  if(skipped.length){
+    h+=`<div class="section-h"><h2>Skipped</h2><span class="n tnum">${skipped.length}</span><button class="pill" style="margin-left:auto;padding:4px 12px;font-size:12px" data-act="toggleskipped">${S.ui.showSkipped?"Hide":"Show"}</button></div>`;
+    if(S.ui.showSkipped||narrowing) h+=`<div class="list">${skipped.map(taskCard).join("")}</div>`;
   }
   $("#main").innerHTML=h; keepSearchFocus(); markSel(); keepQuickAdd();
 }
@@ -1245,7 +1251,7 @@ function keepSearchFocus(){const q=$("#q"); if(q&&qHadFocus){q.focus();try{q.set
 /* tick a task: show the check, let the row fade out, then move it; Undo puts it back */
 function toggleDone(id,btn){
   const t=S.tasks.find(x=>x.id===id); if(!t) return;
-  const snap=snapshot(); t.done=!t.done;
+  const snap=snapshot(); t.done=!t.done; if(!t.done) t.skip=false;
   const card=btn&&btn.closest(".task");
   const finish=()=>{render();toast(t.done?"Done: “"+t.title+"”":"Back on your list: “"+t.title+"”",{undo:snap})};
   if(card&&t.done&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
@@ -1292,7 +1298,7 @@ function taskCalendar(all){
   return h+`</div></div><p class="hint" style="margin:2px 4px">Click a day to add a task on that date.</p>`;
 }
 function dayList(k){
-  const list=visibleTasks().filter(x=>x.due&&iso(new Date(x.due))===k);
+  const list=visibleTasks().filter(x=>!x.skip&&x.due&&iso(new Date(x.due))===k);
   openModal(`<h2>${esc(parseISO(k).toLocaleDateString(LOC,{weekday:"long",day:"numeric",month:"long"}))}</h2><div class="list">${list.map(taskCard).join("")}</div><div class="foot"><button class="pill" id="dClose">Close</button></div>`,
     m=>{m.querySelector("#dClose").onclick=closeModal; m.addEventListener("click",e=>{const b=e.target.closest("[data-edittask]");if(b){closeModal();editTask(b.dataset.edittask)}const c=e.target.closest("[data-toggle]");if(c){const x=S.tasks.find(z=>z.id===c.dataset.toggle),snap=snapshot();x.done=!x.done;closeModal();render();dayList(k);toast(x.done?"Done: “"+x.title+"”":"Back on your list: “"+x.title+"”",{undo:snap})}})});
 }
@@ -1522,7 +1528,7 @@ function openPanel(id){
   const p=$("#panel");
   p.innerHTML=`<div class="ph"><span class="pdot" style="--c:${esc(colorOf(t.course))}"></span><span class="pc" dir="auto">${c?esc(c.name):"No course"}</span><span class="psaved" id="pSaved" aria-live="polite"></span><button class="icon-btn" id="pClose" aria-label="Close (Esc)" title="Close (Esc)">${I.x}</button></div>
     <textarea id="pTitle" class="ptitle" dir="auto" rows="1" aria-label="Title">${esc(t.title)}</textarea>
-    <div class="prow"><button class="pill ${t.done?"":"primary"}" id="pDone">${t.done?"Mark as not done":I.check+" Mark as done"}</button>${link?`<a class="pill" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}</div>
+    <div class="prow"><button class="pill ${t.done?"":"primary"}" id="pDone">${t.done?"Mark as not done":I.check+" Mark as done"}</button>${t.done?"":`<button class="pill" id="pSkip" title="${t.skip?"Show it in your list again":"Keep it as not done, but hide it from your list"}">${t.skip?"Put back on list":"Skip"}</button>`}${link?`<a class="pill" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}</div>
     <div class="field"><label for="pCourse">Course</label><select id="pCourse" class="inp">${courseOptions(t.course)}</select></div>
     <div class="row"><div class="field"><label for="pDate">Due date</label><input id="pDate" type="date" class="inp" value="${d?iso(d):""}"></div>
     <div class="field"><label for="pTime">Time</label><input id="pTime" type="time" class="inp" value="${d?pad(d.getHours())+":"+pad(d.getMinutes()):"23:59"}"></div></div>
@@ -1538,7 +1544,8 @@ function openPanel(id){
   p.querySelectorAll("input,textarea,select").forEach(x=>{x.addEventListener("input",later);x.addEventListener("change",later)});
   ta.addEventListener("input",grow); ta.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ta.blur()}});
   p.querySelector("#pClose").onclick=closePanel;
-  p.querySelector("#pDone").onclick=()=>{flushPanel();const snap=snapshot();t.done=!t.done;render();openPanel(id);toast(t.done?"Done: “"+t.title+"”":"Back on your list: “"+t.title+"”",{undo:snap})};
+  p.querySelector("#pDone").onclick=()=>{flushPanel();const snap=snapshot();t.done=!t.done;if(!t.done)t.skip=false;render();openPanel(id);toast(t.done?"Done: “"+t.title+"”":"Back on your list: “"+t.title+"”",{undo:snap})};
+  const sk=p.querySelector("#pSkip"); if(sk) sk.onclick=()=>{flushPanel();const snap=snapshot();t.skip=!t.skip;if(t.skip){panelId=null;closePanel();render()}else{render();openPanel(id)}toast(t.skip?"Skipped “"+t.title+"”. It stays not done.":"Back on your list: “"+t.title+"”",{undo:snap})};
   p.querySelector("#pDel").onclick=()=>{const snap=snapshot();panelTimer=null;S.tasks=S.tasks.filter(x=>x.id!==id);panelId=null;closePanel();render();toast("Deleted “"+t.title+"”",{undo:snap})};
   ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length);
 }
@@ -1752,7 +1759,7 @@ function importIcs(text,opts){
     if(t.uid||!t.course) return true;
     const twin=S.tasks.find(x=>x.uid&&x.course===t.course&&norm(x.title)===norm(t.title)&&!S.tasks.some(y=>y!==t&&!y.uid&&y.course===t.course&&norm(y.title)===norm(t.title)));
     if(!twin) return true;
-    if(t.done) twin.done=true; if(t.notes&&!twin.notes) twin.notes=t.notes; return false;
+    if(t.done) twin.done=true; if(t.skip) twin.skip=true; if(t.notes&&!twin.notes) twin.notes=t.notes; return false;
   });
   S.isExample=false;
   if(!opts.silent){S.ui.course="all"; S.ui.mode="tasks";}
@@ -2562,7 +2569,7 @@ async function checkReminders(){
   const now=Date.now(), leads=S.rem.leads.slice().sort((a,b)=>a-b);
   let changed=false;
   for(const t of S.tasks){
-    if(t.done||!t.due) continue;
+    if(t.done||t.skip||!t.due) continue;
     const due=Date.parse(t.due); if(!(due>now)) continue;
     const c=course(t.course); if(c&&c.archived) continue;
     const reached=leads.filter(L=>now>=due-L*6e4); if(!reached.length) continue;
@@ -2591,7 +2598,7 @@ async function editReminders(){
   m.querySelector("#rOn").onchange=sync; sync();
   const redraw=()=>{m.querySelector("#rLeads").innerHTML=remPicker();wireRemPicker(m.querySelector("#rLeads"),redraw);m.querySelector("#rOn").checked=S.rem.on;sync()}; const saved=S.rem.leads.slice(), savedOn=S.rem.on; wireRemPicker(m.querySelector("#rLeads"),redraw);
   m.querySelector("#rTest").onclick=async()=>{const ok=await notifyAllowed(true); if(!ok){toast("Notifications are blocked. Allow Taskal in your computer’s notification settings.");return}
-    const next=S.tasks.filter(t=>!t.done&&t.due&&Date.parse(t.due)>Date.now()).sort((a,b)=>Date.parse(a.due)-Date.parse(b.due))[0];
+    const next=S.tasks.filter(t=>!t.done&&!t.skip&&t.due&&Date.parse(t.due)>Date.now()).sort((a,b)=>Date.parse(a.due)-Date.parse(b.due))[0];
     await notify(next?dueWords(new Date(next.due)):"Taskal reminders are on", next?next.title+" (test)":"You’ll get a notification before each deadline."); toast("Test sent")};
   m.querySelector("#rClose").onclick=()=>{S.rem.leads=saved;S.rem.on=savedOn;closeModal()};
   m.querySelector("#rSave").onclick=async()=>{
@@ -2618,6 +2625,7 @@ function act(a){
   else if(a==="keepyear"){S.cal.linkYear=academicYear(today());render()}
   else if(a==="togglearch"){S.ui.showArchived=!S.ui.showArchived;render()}
   else if(a==="toggledone"){S.ui.showDone=!S.ui.showDone;render()}
+  else if(a==="toggleskipped"){S.ui.showSkipped=!S.ui.showSkipped;render()}
   else if(a==="hideexample"){S.ui.hideExample=true;render();toast("Hidden. You can start fresh any time from the ⋯ menu.")}
   else if(a==="autobackups") showAutoBackups();
   else if(a==="timetable") importTimetable();
