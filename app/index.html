@@ -2132,7 +2132,7 @@ function mergeGroups(gs){
   return out;
 }
 /* course numbers as each university writes them */
-const NUM_RX={huji:/\b(\d{5})\b/,technion:/\b(\d{8}|\d{6})\b/,tau:/\b(\d{4})[-\s]?(\d{4})(?:[-\s]?\d{2})?\b/,biu:/\b(\d{2})-?(\d{3})(?:-?\d{2})?\b/,bgu:/\b(\d{3})[.\-\s]?(\d)[.\-\s]?(\d{4})\b/};
+const NUM_RX={huji:/\b(\d{5})\b/,technion:/\b(\d{8}|\d{6})\b/,tau:/\b(\d{4})[-\s]?(\d{4})(?:[-\s]?\d{2})?\b/,biu:/\b(\d{2})-?(\d{3})(?:-?\d{2})?\b/,bgu:/\b(\d{3})[.\-\s]?(\d)[.\-\s]?(\d{4})\b/,reichman:/\b(\d{3,5})\b/};
 function courseNum(c,uni){
   uni=uni||S.uni; const m=((c.moodle||"")+" "+(c.name||"")).match(NUM_RX[uni]||NUM_RX.huji); if(!m) return "";
   if(uni==="technion"){const d=m[1]; return d.length===6?"0"+d.slice(0,3)+"0"+d.slice(3):d}
@@ -2205,7 +2205,44 @@ async function bguCourse(num){
   if(et) [...et.querySelectorAll("tr")].forEach(tr=>{const c=[...tr.children].map(cellText), date=dmy(c[2]||""); if(!date) return; const m=c[1]||""; const quiz=/בוחן/.test(m); exams.push({name:quiz?"בוחן":"מבחן",moed:quiz?+((m.match(/\d/)||[1])[0]):/^א/.test(m)?1:/^ב/.test(m)?2:3,date})});
   return {num,name,groups:mergeGroups(gs),exams};
 }
+/* Reichman: the official yedion search (runi.ac.il), one card per lecture group with tutorials and exams inside */
+async function reichmanCourse(num){
+  const url="https://www.runi.ac.il/yedion/he/pages/generalsearch.aspx", d0=await catHtml(url), f=d0.forms[0];
+  if(!f) throw new Error("Reichman’s course search didn’t load.");
+  const form={}; [...f.elements].forEach(e=>{ if(!e.name||e.type==="submit"||e.type==="button"||e.type==="checkbox") return; form[e.name]=e.value; });
+  form.__EVENTTARGET="ctl00$ContentPlaceHolderBody$RadAutoCompleteSearchBox";
+  form.__EVENTARGUMENT=encodeURIComponent(JSON.stringify({command:"Add",text:num,value:"Course;"+num,attributes:{}}));
+  const d=await catHtml(url,{form});
+  const cards=[...d.querySelectorAll("div.card")].filter(c=>{const h=c.querySelector("h3"); return h&&new RegExp("^\\s*"+num+"\\s*-").test(h.textContent)});
+  if(!cards.length) return null;
+  const P=semPeriod(), semOk=s=>{s=String(s||""); return /שנתי/.test(s)||(P===2?/ב/.test(s):/א/.test(s))||!s.trim()};
+  const strip=(el,lab)=>el?cellText(el).replace(new RegExp("^"+lab+":?\\s*"),""):"";
+  const span=(a,b)=>{let x=hm(a),y=hm(b); if(x>y) [x,y]=[y,x]; return [x,y]};
+  const gs=[], exams=[], seenEx={}, seenTut={}; let name=num;
+  cards.forEach(c=>{
+    const li=k=>c.querySelector(`[id*="_${k}_"]`), title=cellText(c.querySelector("h3"));
+    const m=title.match(/^\s*\d+\s*-\s*(.+?)\s*\(([^)]+)\)\s*$/); if(m) name=m[1];
+    const label=m?m[2]:"שיעור";
+    const sems=strip(li("LiSemesters"),"סמסטר").split(","), days=strip(li("LiDays"),"יום").split(","), hrs=strip(li("LiHours"),"שעות").split(","), rooms=strip(li("LiRooms"),"חדר").split(",");
+    const sessions=[]; days.forEach((dd,k)=>{const wd=heDay(dd), t=(hrs[k]||hrs[0]||"").split("-"); if(wd<0||t.length<2||!semOk(sems[k]||sems[0])) return; const [a,b]=span(t[0],t[1]); sessions.push({weekday:wd,start:a,end:b,room:(rooms[k]||"").trim()})});
+    gs.push({code:strip(li("LiGroupID"),"קוד קבוצה"),kind:kindHe(label),label,sessions});
+    c.querySelectorAll('[id*="PracticeGroupID_"]').forEach(g=>{
+      const suf=g.id.replace(/.*PracticeGroupID_/,""), q=k=>c.querySelector(`[id$="Practice${k}_${suf}"]`), code=strip(g,"קבוצה");
+      if(seenTut[code]) return; seenTut[code]=1;
+      const wd=heDay(strip(q("Day"),"יום")), t=strip(q("Hour"),"שעה").split("-"); if(wd<0||t.length<2||!semOk(strip(q("Semester"),"סמסטר"))) return;
+      const [a,b]=span(t[0],t[1]); gs.push({code,kind:"Tutorial",label:"תרגול",sessions:[{weekday:wd,start:a,end:b,room:strip(q("Room"),"חדר")}]});
+    });
+    c.querySelectorAll('[id*="ExamDate_"]:not([id*="Title"])').forEach(e=>{
+      const suf=e.id.replace(/.*ExamDate_/,""), q=k=>cellText(c.querySelector(`[id$="Exam${k}_${suf}"]`)||{textContent:""}), date=dmy(cellText(e));
+      if(!date||seenEx[date]) return; seenEx[date]=1;
+      const nm=q("Name"), mo=q("Moed"), quiz=/אמצע|בוחן/.test(nm);
+      exams.push({name:quiz?"בוחן":"מבחן",moed:/^ב/.test(mo)?2:/^ג/.test(mo)?3:1,date});
+    });
+  });
+  return {num,name,groups:mergeGroups(gs),exams};
+}
 const CATALOGS={
+  reichman:{get:reichmanCourse,example:"417"},
   huji:{get:hujiCourse,example:"77307"},
   technion:{get:technionCourse,example:"02340114"},
   tau:{get:tauCourse,example:"0366-1100"},

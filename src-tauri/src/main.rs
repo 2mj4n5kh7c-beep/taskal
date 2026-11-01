@@ -39,6 +39,7 @@ const CATALOG_HOSTS: &[&str] = &[
     "arazim-project.com",
     "courses.biu.ac.il",
     "bgu4u.bgu.ac.il",
+    "www.runi.ac.il",
 ];
 
 static CATALOG_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
