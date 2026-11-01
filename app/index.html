@@ -222,6 +222,7 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .cal-t .dot{width:7px;height:7px}
 .cal-t .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .task.skipped{opacity:.6}
+.mgo{margin:-4px 0 12px}.mgo .pill{display:inline-flex;text-decoration:none}.mgo .path{margin:8px 2px 0;font-size:13px;color:var(--muted);line-height:1.5}
 .cal-t.done .tt{text-decoration:line-through;color:var(--muted)}
 .cal-t.late{box-shadow:inset 0 0 0 1px var(--danger)}
 .cal-more{border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:600;text-align:left;padding:0 6px}
@@ -2101,6 +2102,20 @@ const UNIS=[
   {id:"other",name:"Somewhere else",lms:""}
 ];
 const uniOf=id=>UNIS.find(u=>u.id===id)||null;
+/* where each university's Moodle lives; "direct" = straight to the export page (yearly sites follow the academic year) */
+function moodleExport(id){
+  const y=catYear()-1; // the year the academic year starts in
+  switch(id){
+    case "tau": return {url:`https://moodle.tau.ac.il/${y}/calendar/export.php`,direct:true};
+    case "technion": return {url:`https://moodle${y%100}.technion.ac.il/calendar/export.php`,direct:true};
+    case "biu": return {url:"https://lemida.biu.ac.il/calendar/export.php",direct:true};
+    case "huji": return {url:"https://moodle.huji.ac.il/",direct:false};
+    case "bgu": return {url:"https://moodle.bgu.ac.il/",direct:false};
+    case "reichman": return {url:"https://moodle.runi.ac.il/",direct:false};
+    case "ariel": return {url:"https://moodlearn.ariel.ac.il/",direct:false};
+  }
+  return null;
+}
 function applyUni(id){
   S.uni=id||""; const u=uniOf(id), s=sem();
   if(u&&u.A&&s){s.name="Semester A";s.start=u.A[0];s.weeks=Math.max(1,Math.ceil((parseISO(u.A[1])-parseISO(u.A[0]))/(7*864e5)));}
@@ -2320,7 +2335,9 @@ function renderSetup(){
         <div class="field big"><label for="oUni">University</label><select id="oUni" class="inp"><option value="">Choose…</option>${UNIS.map(u=>`<option value="${u.id}" ${S.uni===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></div>
         <div class="field big"><label for="oUrl">${U&&U.lms?esc(U.lms):"Moodle"} calendar link</label><div class="row" style="flex-wrap:nowrap"><input id="oUrl" class="inp" type="url" placeholder="Paste the link" value="${esc(S.cal.url)}"><button class="pill primary ${ONB.busy?"loading":""}" id="oFind" style="flex:none" ${ONB.busy?"disabled aria-busy=\"true\"":""}>${ONB.busy?'<span class="spin" aria-hidden="true"></span>Looking…':"Continue"}</button></div></div>
         ${ONB.err?`<div class="result err">${esc(ONB.err)}</div>`:""}
-        ${HOWTO}
+        ${(()=>{const M=moodleExport(S.uni); if(!M) return HOWTO;
+          return `<div class="mgo"><a class="pill" href="${esc(M.url)}" target="_blank" rel="noopener">${M.direct?"Open the export page ↗":"Open your Moodle ↗"}</a>
+            <p class="path">${M.direct?"":"<b>Calendar</b> → <b>Import or export calendars</b> → <b>Export calendar</b> → "}<b>All courses</b> + <b>Recent and next 60 days</b> → <b>Get calendar URL</b> → copy the link and paste it above</p></div>`})()}
         ${DEMO?`<button class="linkbtn" id="oSample">No link? Try a sample</button>`:""}
         <div class="alt quiet"><span>Or:</span><button class="linkbtn" id="oFile">upload a calendar file</button><span>·</span><button class="linkbtn" id="oManual">type my courses</button></div>`;
     } else {
