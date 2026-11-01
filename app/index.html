@@ -1545,8 +1545,8 @@ function openPanel(id){
   ta.addEventListener("input",grow); ta.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ta.blur()}});
   p.querySelector("#pClose").onclick=closePanel;
   p.querySelector("#pDone").onclick=()=>{flushPanel();const snap=snapshot();t.done=!t.done;if(!t.done)t.skip=false;render();openPanel(id);toast(t.done?"Done: “"+t.title+"”":"Back on your list: “"+t.title+"”",{undo:snap})};
-  const sk=p.querySelector("#pSkip"); if(sk) sk.onclick=()=>{flushPanel();const snap=snapshot();t.skip=!t.skip;if(t.skip){panelId=null;closePanel();render()}else{render();openPanel(id)}toast(t.skip?"Skipped “"+t.title+"”. It stays not done.":"Back on your list: “"+t.title+"”",{undo:snap})};
-  p.querySelector("#pDel").onclick=()=>{const snap=snapshot();panelTimer=null;S.tasks=S.tasks.filter(x=>x.id!==id);panelId=null;closePanel();render();toast("Deleted “"+t.title+"”",{undo:snap})};
+  const sk=p.querySelector("#pSkip"); if(sk) sk.onclick=()=>{flushPanel();const snap=snapshot();t.skip=!t.skip;if(t.skip){closePanel();render()}else{render();openPanel(id)}toast(t.skip?"Skipped “"+t.title+"”. It stays not done.":"Back on your list: “"+t.title+"”",{undo:snap})};
+  p.querySelector("#pDel").onclick=()=>{const snap=snapshot();panelTimer=null;closePanel();S.tasks=S.tasks.filter(x=>x.id!==id);render();toast("Deleted “"+t.title+"”",{undo:snap})};
   ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length);
 }
 function editTaskModal(id,onDay){
@@ -2700,6 +2700,12 @@ $("#main").addEventListener("keydown",e=>{
 $("#main").addEventListener("input",e=>{if(e.target.id==="qa"){qaText=e.target.value;qaFocus=true;render();return}if(e.target.id==="q"){S.ui.q=e.target.value;qHadFocus=true;qCaret=e.target.selectionStart;render()}});
 $("#main").addEventListener("change",e=>{if(e.target.id==="jump"){S.ui.week=+e.target.value;render()}});
 
+/* click on empty space closes the task panel */
+document.addEventListener("mousedown",e=>{
+  if(!panelId||modalEl) return;
+  if(e.target.closest("#panel,.task[data-open],button,a,input,select,textarea,label,[role=dialog],.toast,#toast")) return;
+  closePanel();
+});
 document.addEventListener("click",e=>{
   const a=e.target.closest('a[target="_blank"]'); if(!a||!IS_DESKTOP) return;
   e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
