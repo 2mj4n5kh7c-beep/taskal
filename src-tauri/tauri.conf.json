@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Taskal 2",
-  "version": "2.0.4",
-  "identifier": "il.taskal.app2",
+  "productName": "Taskal 3",
+  "version": "3.0.0",
+  "identifier": "il.taskal.app3",
   "build": {
     "frontendDist": "../app"
   },
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Taskal 2",
+        "title": "Taskal 3",
         "hiddenTitle": true,
         "width": 1200,
         "height": 820,
