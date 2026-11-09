@@ -969,6 +969,8 @@ async function afterSignIn(){
   m=>{m.querySelector("#kLocal").onclick=async()=>{closeModal();await Cloud.push();toast("Kept this computer’s copy and synced it.")};
     m.querySelector("#kCloud").onclick=()=>{autoBackup("Before using the synced copy");adoptCloud(row.data);Cloud.setMeta({dirty:false,server:row.updated_at,at:new Date().toISOString()});Cloud.set("synced");closeModal();toast("Using your account’s copy. This computer’s old copy is in Automatic backups.")}});
 }
+const UNI_HOSTS=[["huji.ac.il","huji"],["tau.ac.il","tau"],["technion.ac.il","technion"],["biu.ac.il","biu"],["haifa.ac.il","haifa"],["bgu.ac.il","bgu"],["ariel.ac.il","ariel"],["runi.ac.il","reichman"],["idc.ac.il","reichman"],["openu.ac.il","openu"]];
+function uniFromUrl(u){const h=String(u||"").toLowerCase().match(/^(?:https?|webcal):\/\/([^\/?#]+)/); if(!h) return ""; const x=UNI_HOSTS.find(([d])=>h[1]===d||h[1].endsWith("."+d)); return x?x[1]:""}
 function normalize(v){
   v.semesters=v.semesters||[]; v.courses=v.courses||[]; v.tasks=v.tasks||[]; v.slots=v.slots||[];
   v.seen=v.seen||{}; v.notes=v.notes||{};
@@ -976,7 +978,7 @@ function normalize(v){
   v.rem=Object.assign({on:true,leads:[1440,180]},v.rem||{}); v.notified=v.notified||{};
   v.tasks=v.tasks.filter(t=>!(t.uid&&/\b(attendance|attendence)\b|נוכחות/i.test(t.title||"")));
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
-  v.uni=v.uni||""; v.feeds=v.feeds||[]; v.recs=v.recs||{};
+  v.uni=v.uni||uniFromUrl(v.cal.url)||""; v.feeds=v.feeds||[]; v.recs=v.recs||{};
   v.ui=Object.assign({q:"",filter:null,density:"compact",taskView:"list",calMonth:null,mode:"tasks",course:"all",lecView:"week",week:null,showArchived:false,showDone:false,showSkipped:false},v.ui||{});
   if(!v.activeSemester&&v.semesters[0]) v.activeSemester=v.semesters[0].id;
   if(!v.palette2){ // move courses onto the calmer colour set, keeping each course distinct
@@ -1518,7 +1520,7 @@ const courseOptions=sel=>`<option value="">No course</option>`+S.courses.filter(
 /* ---------- task editor ---------- */
 let panelId=null, panelTimer=null;
 function editTask(id,onDay){ if(id&&S.tasks.some(x=>x.id===id)) return openPanel(id); return editTaskModal(id,onDay); }
-function closePanel(){ if(!panelId) return; flushPanel(); panelId=null; const p=$("#panel"); p.hidden=true; p.innerHTML=""; document.body.classList.remove("has-panel"); document.querySelectorAll(".task.sel").forEach(x=>x.classList.remove("sel")); }
+function closePanel(){ if(panelId){ try{flushPanel()}catch(e){console.error(e)} } panelId=null; const p=$("#panel"); if(!p) return; p.hidden=true; p.innerHTML=""; document.body.classList.remove("has-panel"); document.querySelectorAll(".task.sel").forEach(x=>x.classList.remove("sel")); }
 function flushPanel(){ if(panelTimer){clearTimeout(panelTimer);panelTimer=null;readPanel();} }
 function readPanel(){
   const p=$("#panel"), t=S.tasks.find(x=>x.id===panelId); if(!t||!p.querySelector("#pTitle")) return;
@@ -1934,7 +1936,7 @@ function openImport(){
   m.querySelector("#calSave").onclick=async()=>{
     const url=m.querySelector("#calUrl").value.trim();
     if(!/^https?:\/\//i.test(url)){res.innerHTML=`<div class="result err">Paste the full link, starting with https://</div>`;return}
-    S.cal.url=url; S.cal.linkYear=academicYear(today()); S.cal.error=""; if(!S.cal.since&&S.tasks.length) S.cal.since=iso(addDays(today(),-1)); save();
+    S.cal.url=url; if(!S.uni) S.uni=uniFromUrl(url); S.cal.linkYear=academicYear(today()); S.cal.error=""; if(!S.cal.since&&S.tasks.length) S.cal.since=iso(addDays(today(),-1)); save();
     if(!IS_DESKTOP){res.innerHTML=`<div class="result">Link saved. It will sync automatically when you open Taskal in the desktop app.</div>`;render();return}
     res.innerHTML=""; const done=busy(m.querySelector("#calSave"),"Syncing…");
     try{const x=await syncNow(); res.innerHTML=`<div class="result"><b>Synced.</b> ${esc(summarize(x))}.</div>`}
