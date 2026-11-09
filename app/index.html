@@ -222,6 +222,9 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .cal-t .dot{width:7px;height:7px}
 .cal-t .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .task.skipped{opacity:.6}
+.offlabel.swap,.offtag.swap{color:var(--accent)}
+.semsrc{margin:-6px 2px 10px;font-size:12.5px;color:var(--muted)}.semsrc a{color:inherit}
+.unidates{margin:0 2px 14px;font-size:13.5px}.unidates .quiet{color:var(--muted)}
 .mgo{margin:-4px 0 12px}.mgo .pill{display:inline-flex;text-decoration:none}.mgo .path{margin:8px 2px 0;font-size:13px;color:var(--muted);line-height:1.5}
 .cal-t.done .tt{text-decoration:line-through;color:var(--muted)}
 .cal-t.late{box-shadow:inset 0 0 0 1px var(--danger)}
@@ -969,6 +972,7 @@ async function afterSignIn(){
 function normalize(v){
   v.semesters=v.semesters||[]; v.courses=v.courses||[]; v.tasks=v.tasks||[]; v.slots=v.slots||[];
   v.seen=v.seen||{}; v.notes=v.notes||{};
+  const now_=Date.now(); v.tasks.forEach(t=>{if(t.info&&!t.done&&t.due&&Date.parse(t.due)<now_-864e5) t.done=true});
   v.rem=Object.assign({on:true,leads:[1440,180]},v.rem||{}); v.notified=v.notified||{};
   v.tasks=v.tasks.filter(t=>!(t.uid&&/\b(attendance|attendence)\b|נוכחות/i.test(t.title||"")));
   v.cal=Object.assign({url:"",lastSync:null,lastResult:"",linkYear:null,error:"",ignore:[],since:null},v.cal||{});
@@ -1017,7 +1021,7 @@ function emptyState(){
 }
 
 /* ---------- Israeli holidays (school breaks), generated from the Hebrew calendar ---------- */
-const IL_HOLIDAYS=[["2026-03-02", "2026-03-02", "Purim"], ["2026-03-31", "2026-04-07", "Pesach"], ["2026-04-20", "2026-04-21", "Yom HaZikaron & Yom HaAtzma’ut"], ["2026-05-20", "2026-05-21", "Shavuot"], ["2026-09-10", "2026-09-12", "Rosh Hashana"], ["2026-09-19", "2026-09-20", "Yom Kippur"], ["2026-09-25", "2026-10-02", "Sukkot"], ["2027-03-22", "2027-03-22", "Purim"], ["2027-04-20", "2027-04-27", "Pesach"], ["2027-05-10", "2027-05-11", "Yom HaZikaron & Yom HaAtzma’ut"], ["2027-06-09", "2027-06-10", "Shavuot"], ["2027-09-30", "2027-10-02", "Rosh Hashana"], ["2027-10-09", "2027-10-10", "Yom Kippur"], ["2027-10-15", "2027-10-22", "Sukkot"], ["2028-03-11", "2028-03-11", "Purim"], ["2028-04-09", "2028-04-16", "Pesach"], ["2028-04-30", "2028-05-01", "Yom HaZikaron & Yom HaAtzma’ut"], ["2028-05-29", "2028-05-30", "Shavuot"], ["2028-09-19", "2028-09-21", "Rosh Hashana"], ["2028-09-28", "2028-09-29", "Yom Kippur"], ["2028-10-04", "2028-10-11", "Sukkot"], ["2029-02-28", "2029-02-28", "Purim"], ["2029-03-29", "2029-04-05", "Pesach"], ["2029-04-17", "2029-04-18", "Yom HaZikaron & Yom HaAtzma’ut"], ["2029-05-18", "2029-05-19", "Shavuot"], ["2029-09-08", "2029-09-10", "Rosh Hashana"], ["2029-09-17", "2029-09-18", "Yom Kippur"], ["2029-09-23", "2029-09-30", "Sukkot"], ["2030-03-18", "2030-03-18", "Purim"], ["2030-04-16", "2030-04-23", "Pesach"], ["2030-05-06", "2030-05-07", "Yom HaZikaron & Yom HaAtzma’ut"], ["2030-06-05", "2030-06-06", "Shavuot"], ["2030-09-26", "2030-09-28", "Rosh Hashana"], ["2030-10-05", "2030-10-06", "Yom Kippur"], ["2030-10-11", "2030-10-18", "Sukkot"], ["2031-03-08", "2031-03-08", "Purim"], ["2031-04-06", "2031-04-13", "Pesach"], ["2031-04-27", "2031-04-28", "Yom HaZikaron & Yom HaAtzma’ut"], ["2031-05-26", "2031-05-27", "Shavuot"]];
+const IL_HOLIDAYS=[["2026-03-03", "2026-03-03", "Purim"], ["2026-04-01", "2026-04-08", "Pesach"], ["2026-04-21", "2026-04-22", "Yom HaZikaron & Yom HaAtzma’ut"], ["2026-05-21", "2026-05-22", "Shavuot"], ["2026-09-11", "2026-09-13", "Rosh Hashana"], ["2026-09-20", "2026-09-21", "Yom Kippur"], ["2026-09-26", "2026-10-03", "Sukkot"], ["2027-03-23", "2027-03-23", "Purim"], ["2027-04-21", "2027-04-28", "Pesach"], ["2027-05-11", "2027-05-12", "Yom HaZikaron & Yom HaAtzma’ut"], ["2027-06-10", "2027-06-11", "Shavuot"], ["2027-10-01", "2027-10-03", "Rosh Hashana"], ["2027-10-10", "2027-10-11", "Yom Kippur"], ["2027-10-16", "2027-10-23", "Sukkot"], ["2028-03-12", "2028-03-12", "Purim"], ["2028-04-10", "2028-04-17", "Pesach"], ["2028-05-01", "2028-05-02", "Yom HaZikaron & Yom HaAtzma’ut"], ["2028-05-30", "2028-05-31", "Shavuot"], ["2028-09-20", "2028-09-22", "Rosh Hashana"], ["2028-09-29", "2028-09-30", "Yom Kippur"], ["2028-10-05", "2028-10-12", "Sukkot"], ["2029-03-01", "2029-03-01", "Purim"], ["2029-03-30", "2029-04-06", "Pesach"], ["2029-04-18", "2029-04-19", "Yom HaZikaron & Yom HaAtzma’ut"], ["2029-05-19", "2029-05-20", "Shavuot"], ["2029-09-09", "2029-09-11", "Rosh Hashana"], ["2029-09-18", "2029-09-19", "Yom Kippur"], ["2029-09-24", "2029-10-01", "Sukkot"], ["2030-03-19", "2030-03-19", "Purim"], ["2030-04-17", "2030-04-24", "Pesach"], ["2030-05-07", "2030-05-08", "Yom HaZikaron & Yom HaAtzma’ut"], ["2030-06-06", "2030-06-07", "Shavuot"], ["2030-09-27", "2030-09-29", "Rosh Hashana"], ["2030-10-06", "2030-10-07", "Yom Kippur"], ["2030-10-12", "2030-10-19", "Sukkot"], ["2031-03-09", "2031-03-09", "Purim"], ["2031-04-07", "2031-04-14", "Pesach"], ["2031-04-28", "2031-04-29", "Yom HaZikaron & Yom HaAtzma’ut"], ["2031-05-27", "2031-05-28", "Shavuot"]];
 const academicYear=d=>d.getMonth()>=8?d.getFullYear():d.getFullYear()-1; // Israeli academic year starts around October
 const IS_DESKTOP=!!(window.__TAURI__&&window.__TAURI__.core);
 
@@ -1054,6 +1058,9 @@ function currentWeek(s){
   const d=Math.floor((today()-sundayOf(parseISO(s.start)))/(7*864e5));
   return Math.min(Math.max(d,0),s.weeks-1);
 }
+function swapFor(s,date){const k=iso(date),w=(s.swaps||[]).find(x=>x.date===k);return w||null}
+/* the sessions that happen on a date: a make-up day runs another weekday's classes */
+function slotsOn(s,date,slots){const w=swapFor(s,date);const wd=w?w.weekday:date.getDay();return slots.filter(x=>x.weekday===wd)}
 function breakFor(s,date){
   const k=iso(date);
   const b=(s.breaks||[]).find(b=>b.from<=k&&k<=(b.to||b.from));
@@ -1065,9 +1072,10 @@ function progress(s,courseId){
   S.slots.filter(x=>x.course===courseId).forEach(sl=>{
     for(let w=0;w<s.weeks;w++){
       const d=addDays(weekStart(s,w),sl.weekday);
-      if(d>t||breakFor(s,d)) continue;
+      if(d>t||breakFor(s,d)||swapFor(s,d)) continue;
       held++; if(S.seen[skey(sl,d)]) seen++;
     }
+    (s.swaps||[]).forEach(w=>{const d=parseISO(w.date); if(w.weekday!==sl.weekday||d>t||breakFor(s,d)) return; held++; if(S.seen[skey(sl,d)]) seen++;});
   });
   return {held,seen};
 }
@@ -1160,7 +1168,7 @@ function taskCard(t){
     <button class="check" data-toggle="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Mark as not done":"Mark as done"}">${t.done?I.check:""}</button>
     <div style="min-width:0">
       <div class="t" dir="auto">${esc(t.title)}</div>
-      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${t.skip&&!t.done?'<span class="badge">skipped</span>':""}${recentChange(t)==="new"?'<span class="badge chg">new</span>':recentChange(t)==="moved"?`<span class="badge chg" title="Was ${esc(new Date(t.chg.from).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}))}">moved</span>`:""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}${notes?`<span class="hasnote" title="${esc(String(notes).slice(0,200))}">${I.hasnote}</span>`:""}</div>
+      <div class="meta">${c?`<span dir="auto">${esc(c.name)}</span>`:""}${dueTxt}${t.tentative?'<span class="badge">estimated</span>':""}${t.skip&&!t.done?'<span class="badge">skipped</span>':""}${t.info?'<span class="badge">university date</span>':""}${recentChange(t)==="new"?'<span class="badge chg">new</span>':recentChange(t)==="moved"?`<span class="badge chg" title="Was ${esc(new Date(t.chg.from).toLocaleString(LOC,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}))}">moved</span>`:""}${link?`<a class="mlink" href="${esc(link)}" target="_blank" rel="noopener">${linkLabel(link)} ↗</a>`:""}${notes?`<span class="hasnote" title="${esc(String(notes).slice(0,200))}">${I.hasnote}</span>`:""}</div>
       ${notes?`<div class="notes" dir="auto">${notesHtml(notes)}</div>`:""}
     </div>
     <div class="acts"><button data-edittask="${esc(t.id)}" aria-label="Edit task" title="Edit">${I.edit}</button></div>
@@ -1350,9 +1358,10 @@ function renderLectures(){
     const t=today();
     h+=`<div class="days" style="--cols:${days.length}">`;
     days.forEach(d=>{
-      const date=addDays(ws,d), off=breakFor(s,date), isToday=iso(date)===iso(t);
-      const list=slots.filter(x=>x.weekday===d).sort((a,b)=>a.start.localeCompare(b.start));
+      const date=addDays(ws,d), off=breakFor(s,date), isToday=iso(date)===iso(t), sw=swapFor(s,date);
+      const list=slotsOn(s,date,slots).sort((a,b)=>a.start.localeCompare(b.start));
       h+=`<div class="day"><div class="day-h glass ${isToday?"today":""}"><b>${DAYS[d]}${isToday?" · Today":""}</b><span class="tnum">${fmtDay(date)}</span></div>`;
+      if(sw&&!off) h+=`<div class="offlabel swap">Make-up day · ${esc(sw.label)}</div>`;
       if(off&&list.length) h+=`<div class="offlabel">No class · ${esc(off)}</div>`;
       list.forEach(sl=>{
         const c=course(sl.course), k=skey(sl,date), seen=!!S.seen[k], note=S.notes[k], future=date>t;
@@ -1394,14 +1403,14 @@ function timeGrid(s,ws,slots){
   const lo=Math.floor(Math.min(...slots.map(x=>toMin(x.start)))/60)*60, hi=Math.ceil(Math.max(...slots.map(x=>toMin(x.end)))/60)*60;
   const span=Math.max(hi-lo,60), pct=m=>((m-lo)/span*100).toFixed(3)+"%";
   let h=`<div class="tg" style="--cols:${days.length}"><div class="tg-head"><div></div>`;
-  days.forEach(d=>{const date=addDays(ws,d), isToday=iso(date)===iso(t), off=breakFor(s,date);
-    h+=`<div class="day-h ${isToday?"today":""}"><b>${DAYS[d]}${isToday?" · Today":""}</b><span class="tnum">${fmtDay(date)}</span>${off?`<i class="offtag">${esc(off)}</i>`:""}</div>`});
+  days.forEach(d=>{const date=addDays(ws,d), isToday=iso(date)===iso(t), off=breakFor(s,date), sw=swapFor(s,date);
+    h+=`<div class="day-h ${isToday?"today":""}"><b>${DAYS[d]}${isToday?" · Today":""}</b><span class="tnum">${fmtDay(date)}</span>${off?`<i class="offtag">${esc(off)}</i>`:sw?`<i class="offtag swap">${esc(sw.label)}</i>`:""}</div>`});
   h+=`</div><div class="tg-body"><div class="tg-hours">`;
   for(let m=lo;m<=hi;m+=60) h+=`<span class="tnum" style="top:${pct(m)}">${pad(m/60)}:00</span>`;
   h+=`</div>`;
   days.forEach(d=>{
     const date=addDays(ws,d), off=breakFor(s,date), future=date>t;
-    const list=slots.filter(x=>x.weekday===d).sort((a,b)=>toMin(a.start)-toMin(b.start)||toMin(b.end)-toMin(a.end));
+    const list=slotsOn(s,date,slots).sort((a,b)=>toMin(a.start)-toMin(b.start)||toMin(b.end)-toMin(a.end));
     // side-by-side lanes for sessions that overlap
     const lanes=[], place=new Map(); let cluster=[], clusterEnd=-1;
     const flush=()=>{const n=Math.max(1,...cluster.map(x=>place.get(x).lane+1));cluster.forEach(x=>place.get(x).n=n);cluster=[];lanes.length=0};
@@ -1636,7 +1645,7 @@ function editSemesters(){
       <button class="icon-btn" data-rms="${i}" aria-label="Remove semester" ${sems.length<2?"disabled":""}>${I.x}</button></div>
       <div class="lab" style="margin:10px 0 6px">Holidays (no classes)</div>
       ${s.breaks.map((b,j)=>`<div class="brk"><input class="inp" type="date" data-b="${j}" data-bf="from" value="${esc(b.from)}" aria-label="From"><input class="inp" type="date" data-b="${j}" data-bf="to" value="${esc(b.to||b.from)}" aria-label="To"><input class="inp" data-b="${j}" data-bf="label" value="${esc(b.label)}" placeholder="Sukkot" aria-label="Name"><button class="icon-btn" data-rmb="${j}" aria-label="Remove holiday">${I.x}</button></div>`).join("")}
-      <div class="row" style="gap:6px"><button class="pill" data-addb="${i}" style="padding:4px 12px;font-size:12px;flex:none">+ Holiday</button><button class="pill" data-ilh="${i}" style="padding:4px 12px;font-size:12px;flex:none">Add Israeli holidays</button></div></div>`).join("")};
+      <div class="row" style="gap:6px"><button class="pill" data-addb="${i}" style="padding:4px 12px;font-size:12px;flex:none">+ Holiday</button><button class="pill" data-ilh="${i}" style="padding:4px 12px;font-size:12px;flex:none">Add Israeli holidays</button>${(()=>{const U=uniOf(S.uni);return U&&U.A?`<button class="pill" data-unical="${i}" style="padding:4px 12px;font-size:12px;flex:none">Use ${esc(U.short||U.name)}’s calendar</button>`:""})()}</div>${(s.swaps||[]).length?`<p class="hint" style="margin:8px 0 0">Make-up days: ${s.swaps.map(w=>esc(fmtShort(parseISO(w.date))+" · "+w.label)).join(", ")}</p>`:""}</div>`).join("")};
   draw();
   const upd=e=>{const card=e.target.closest("[data-s]");if(!card)return;const s=sems[+card.dataset.s];
     if(e.target.dataset.f){s[e.target.dataset.f]=e.target.dataset.f==="weeks"?Math.max(1,Math.min(30,+e.target.value||1)):e.target.value}
@@ -1645,6 +1654,7 @@ function editSemesters(){
   box.addEventListener("click",e=>{
     const card=e.target.closest("[data-s]");if(!card)return;const s=sems[+card.dataset.s];
     const b=e.target.closest("button");if(!b)return;
+    if(b.dataset.unical!=null){const U=uniOf(S.uni), x=sems[+b.dataset.unical]; if(U&&U.A){const T=/\bB\b|ב/.test(x.name)&&U.B?{key:"B",name:"Semester B",...U.B}:{key:"A",name:"Semester A",...U.A}; fillFromUni(x,U,T); draw(); toast(`Loaded ${U.short||U.name}’s ${T.name}: ${x.breaks.length} days off${x.swaps.length?`, ${x.swaps.length} make-up days`:""}.`)} return}
     if(b.dataset.addb!=null){s.breaks.push({from:s.start,to:s.start,label:""});draw()}
     if(b.dataset.ilh!=null){
       const st=s.start, en=iso(addDays(weekStart(s,s.weeks-1),6)); let n=0;
@@ -2088,15 +2098,35 @@ function sampleIcs(){
 
 /* ---------- setup guide: 1 courses → 2 tasks → 3 timetable ---------- */
 /* universities: which system they use and their published semester dates (2026-27, from each university's academic calendar) */
+/* university profiles: each university's own 2026-27 calendar (semester dates, days off, make-up days, exam periods).
+   brk: [from,to,label] · swap: [date, weekday whose classes run that day (0=Sun), label] · exams: [from,to,label] · il:true = also take the national holidays */
 const UNIS=[
-  {id:"huji",name:"Hebrew University of Jerusalem",lms:"Moodle",A:["2026-10-11","2027-01-15"],panopto:"huji.cloud.panopto.eu"},
-  {id:"tau",name:"Tel Aviv University",lms:"Moodle",A:["2026-10-18","2027-01-18"]},
-  {id:"technion",name:"Technion",lms:"Moodle",A:["2026-10-28","2027-02-02"]},
-  {id:"biu",name:"Bar-Ilan University",lms:"Moodle",A:["2026-10-11","2027-01-17"]},
-  {id:"haifa",name:"University of Haifa",lms:"Moodle",A:["2026-10-11","2027-01-10"]},
-  {id:"bgu",name:"Ben-Gurion University",lms:"Moodle"},
-  {id:"ariel",name:"Ariel University",lms:"Moodle"},
-  {id:"reichman",name:"Reichman University",lms:"Moodle"},
+  {id:"huji",name:"Hebrew University of Jerusalem",short:"Hebrew U",lms:"Moodle",panopto:"huji.cloud.panopto.eu",src:"https://academic-secretary.huji.ac.il/%D7%9C%D7%95%D7%97-%D7%A9%D7%A0%D7%94-%D7%90%D7%A7%D7%93%D7%9E%D7%99",
+    A:{start:"2026-10-11",end:"2027-01-15",brk:[["2026-10-27","2026-10-27","Election day"],["2026-12-06","2026-12-12","Winter break (Hanukkah)"],["2026-12-25","2026-12-25","Christmas"]]},
+    B:{start:"2027-03-07",end:"2027-06-29",brk:[["2027-03-11","2027-03-11","Eid al-Fitr"],["2027-03-23","2027-03-24","Purim"],["2027-04-18","2027-05-01","Pesach"],["2027-05-11","2027-05-12","Yom HaZikaron & Yom HaAtzma’ut"],["2027-05-17","2027-05-17","Eid al-Adha"],["2027-06-10","2027-06-11","Shavuot"],["2027-06-20","2027-06-20","Student break"]],
+      swap:[["2027-06-27",3,"Wednesday classes"],["2027-06-28",4,"Thursday classes"]]}},
+  {id:"tau",name:"Tel Aviv University",short:"TAU",lms:"Moodle",src:"https://www.tau.ac.il/calendar",
+    A:{start:"2026-10-18",end:"2027-01-18",brk:[["2026-10-27","2026-10-27","Election day"],["2026-12-06","2026-12-06","Hanukkah"]],swap:[["2027-01-18",2,"Tuesday classes"]],exams:[["2027-01-20","2027-03-08","Exam period"]]},
+    B:{start:"2027-03-09",end:"2027-06-27",brk:[["2027-03-23","2027-03-23","Purim"],["2027-04-18","2027-04-30","Pesach"],["2027-05-11","2027-05-12","Yom HaZikaron & Yom HaAtzma’ut"],["2027-06-10","2027-06-11","Shavuot"]],swap:[["2027-06-27",2,"Tuesday classes"]],exams:[["2027-06-29","2027-06-29","Exam period starts"]]}},
+  {id:"technion",name:"Technion",short:"Technion",lms:"Moodle",il:true,src:"https://senatesecretariat.net.technion.ac.il/files/2026/05/%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D-%D7%A2%D7%99%D7%A7%D7%A8%D7%99%D7%99%D7%9D-%D7%AA%D7%A9%D7%A4%D7%96-%D7%9E%D7%A2%D7%95%D7%93%D7%9B%D7%9F.pdf",
+    A:{start:"2026-10-28",end:"2027-01-28",brk:[["2026-12-09","2026-12-11","Hanukkah"]],exams:[["2027-02-01","2027-02-25","Exams · moed A"],["2027-03-03","2027-03-26","Exams · moed B"]]},
+    B:{start:"2027-03-24",end:"2027-07-08",brk:[["2027-05-20","2027-05-20","Student day"]],exams:[["2027-07-12","2027-08-04","Exams · moed A"],["2027-08-10","2027-08-27","Exams · moed B"]]}},
+  {id:"biu",name:"Bar-Ilan University",short:"Bar-Ilan",lms:"Moodle",src:"https://www.biu.ac.il/sites/default/files/inline-files/luzshulchani27-26.pdf",
+    A:{start:"2026-10-11",end:"2027-01-17",brk:[["2026-10-27","2026-10-27","Election day"],["2026-12-04","2026-12-07","Hanukkah"]],exams:[["2027-01-18","2027-02-28","Exam period"]]},
+    B:{start:"2027-03-01",end:"2027-06-25",brk:[["2027-03-22","2027-03-24","Purim"],["2027-04-18","2027-04-30","Pesach"],["2027-05-11","2027-05-12","Yom HaZikaron & Yom HaAtzma’ut"],["2027-06-04","2027-06-04","Yom Yerushalayim"],["2027-06-10","2027-06-11","Shavuot"]],exams:[["2027-06-27","2027-08-31","Exam period"]]}},
+  {id:"haifa",name:"University of Haifa",short:"Haifa",lms:"Moodle",src:"https://www.haifa.ac.il/wp-content/uploads/2025/12/2026-7.pdf",
+    A:{start:"2026-10-11",end:"2027-01-10",brk:[["2026-10-27","2026-10-27","Election day"],["2026-12-06","2026-12-06","Hanukkah"],["2026-12-25","2026-12-25","Christmas"]],exams:[["2027-01-11","2027-02-05","Exams · moed A"],["2027-02-07","2027-02-28","Exams · moed B"]]},
+    B:{start:"2027-03-01",end:"2027-06-17",brk:[["2027-03-23","2027-03-23","Purim"],["2027-04-18","2027-04-28","Pesach"],["2027-05-11","2027-05-12","Yom HaZikaron & Yom HaAtzma’ut"],["2027-06-10","2027-06-11","Shavuot"]],swap:[["2027-06-14",2,"Tuesday classes (Zoom)"]],exams:[["2027-06-20","2027-07-16","Exams · moed A"],["2027-07-18","2027-08-06","Exams · moed B"]]}},
+  {id:"bgu",name:"Ben-Gurion University",short:"BGU",lms:"Moodle",il:true,src:"https://www.bgu.ac.il/media/nuoe1dc3/academic-calendar-2026-2027.pdf",
+    A:{start:"2026-10-18",end:"2027-01-15",brk:[["2026-10-27","2026-10-27","Election day"]],exams:[["2027-01-17","2027-01-17","Exam period starts"]]},
+    B:{start:"2027-02-28",end:"2027-06-25",brk:[["2027-04-21","2027-04-28","Pesach"]],exams:[["2027-06-27","2027-06-27","Exam period starts"]]}},
+  {id:"ariel",name:"Ariel University",short:"Ariel",lms:"Moodle",src:"https://campuscore.ariel.ac.il/wp/wp-content/uploads/2026/01/%D7%9C%D7%95%D7%97-%D7%96%D7%9E%D7%A0%D7%99%D7%9D-%D7%90%D7%A7%D7%93%D7%9E%D7%99-%D7%AA%D7%A9%D7%A4%D7%96.pdf",
+    A:{start:"2026-10-18",end:"2027-01-08",brk:[["2026-10-27","2026-10-27","Election day"],["2026-12-10","2026-12-10","Hanukkah"]],swap:[["2027-01-10",4,"Thursday classes"]],exams:[["2027-01-11","2027-02-08","Exams · moed A"],["2027-02-09","2027-02-28","Exams · moed B"]]},
+    B:{start:"2027-03-01",end:"2027-06-03",brk:[["2027-03-22","2027-03-24","Purim"],["2027-04-21","2027-04-28","Pesach"],["2027-05-11","2027-05-12","Yom HaZikaron & Yom HaAtzma’ut"],["2027-05-27","2027-05-27","Student day"],["2027-06-10","2027-06-11","Shavuot"]],
+      swap:[["2027-06-04",2,"Tuesday classes"],["2027-06-06",3,"Wednesday classes"],["2027-06-07",3,"Wednesday classes"]],exams:[["2027-06-14","2027-07-12","Exams · moed A"],["2027-07-13","2027-08-02","Exams · moed B"]]}},
+  {id:"reichman",name:"Reichman University",short:"Reichman",lms:"Moodle",src:"https://www.runi.ac.il/media/fq5hrxou/%D7%9C%D7%95%D7%97-%D7%A9%D7%A0%D7%AA-%D7%94%D7%9C%D7%99%D7%9E%D7%95%D7%93%D7%99%D7%9D-%D7%AA%D7%A9%D7%A4%D7%96-%D7%9E%D7%A2%D7%95%D7%93%D7%9B%D7%9F.pdf",
+    A:{start:"2026-10-18",end:"2027-01-15",brk:[["2026-10-27","2026-10-27","Election day"],["2026-12-06","2026-12-06","Hanukkah"]],exams:[["2027-01-17","2027-01-17","Exam period starts"]]},
+    B:{start:"2027-03-07",end:"2027-06-25",brk:[["2027-03-23","2027-03-23","Purim"],["2027-04-18","2027-04-30","Pesach"],["2027-05-11","2027-05-12","Yom HaZikaron & Yom HaAtzma’ut"],["2027-06-10","2027-06-11","Shavuot"]],exams:[["2027-06-27","2027-06-27","Exam period starts"]]}},
   {id:"openu",name:"The Open University",lms:"Moodle"},
   {id:"college",name:"A college in Israel",lms:"Moodle"},
   {id:"other",name:"Somewhere else",lms:""}
@@ -2116,10 +2146,37 @@ function moodleExport(id){
   }
   return null;
 }
+/* which term of a university's calendar applies now: semester B from two weeks before it starts */
+function uniTerm(u){
+  if(!u||!u.A) return null;
+  const t=iso(today()), b=u.B&&iso(addDays(parseISO(u.B.start),-14));
+  if(u.B&&t>=b) return {key:"B",name:"Semester B",...u.B};
+  return {key:"A",name:"Semester A",...u.A};
+}
+function termWeeks(T){return Math.max(1,Math.round((sundayOf(parseISO(T.end))-sundayOf(parseISO(T.start)))/(7*864e5))+1)}
+/* put a university's semester into a semester object: dates, days off (its own, plus national holidays where its calendar leaves them out), make-up days */
+function fillFromUni(s,u,T){
+  s.name=T.name; s.start=T.start; s.weeks=termWeeks(T); s.uni=u.id;
+  const en=T.end, brk=(T.brk||[]).map(([f,t,l])=>({from:f,to:t,label:l}));
+  if(u.il) IL_HOLIDAYS.forEach(([f,t,l])=>{if(t>=T.start&&f<=en&&!brk.some(x=>x.from<=t&&f<=x.to))brk.push({from:f,to:t,label:l})});
+  s.breaks=brk.sort((a,b)=>a.from.localeCompare(b.from));
+  s.swaps=(T.swap||[]).map(([d,wd,l])=>({date:d,weekday:wd,label:l}));
+}
 function applyUni(id){
-  S.uni=id||""; const u=uniOf(id), s=sem();
-  if(u&&u.A&&s){s.name="Semester A";s.start=u.A[0];s.weeks=Math.max(1,Math.ceil((parseISO(u.A[1])-parseISO(u.A[0]))/(7*864e5)));}
+  S.uni=id||""; const u=uniOf(id), s=sem(), T=uniTerm(u);
+  if(T&&s) fillFromUni(s,u,T); else if(s&&s.uni){const g=guessSemester(); Object.assign(s,{name:g.name,start:g.start,weeks:g.weeks,swaps:[],breaks:[]}); delete s.uni;}
   if(u&&id==="other") ONB.hol=false;
+}
+/* the university's own dates worth seeing in the task list: exam periods, make-up days, last day of classes, next semester */
+function uniDates(u){
+  const T=uniTerm(u); if(!T) return [];
+  const out=[];
+  out.push([T.end,"Last day of classes · "+T.name]);
+  (T.swap||[]).forEach(([d,wd,l])=>out.push([d,"Make-up day: "+l]));
+  (T.exams||[]).forEach(([f,,l])=>out.push([f,l.replace(" starts","")+" starts"]));
+  if(T.key==="A"&&u.B) out.push([u.B.start,"Semester B starts"]);
+  const td=iso(today());
+  return out.filter(x=>x[0]>=td).map(([d,title])=>({date:d,title}));
 }
 /* ---------- university course catalogs: weekly times, groups and exam dates by course number ---------- */
 const HE_DAY={"א":0,"ב":1,"ג":2,"ד":3,"ה":4,"ו":5,"ש":6,"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"שבת":6};
@@ -2375,12 +2432,15 @@ function renderSetup(){
     h+=`<div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="pill primary" id="oNext2" ${ONB.busy?"disabled":""}>Next</button></div>`;
   }
   if(n===3){
-    const s=sem(), end=s.start?addDays(weekStart(s,s.weeks-1),5):null;
+    const s=sem(), U=s.uni&&uniOf(s.uni), T=U&&uniTerm(U), end=T&&T.start===s.start?parseISO(T.end):(s.start?addDays(weekStart(s,s.weeks-1),5):null);
+    const nOff=(s.breaks||[]).length, nSw=(s.swaps||[]).length, UD=U?uniDates(U):[];
     h+=`<h1>Your week</h1>
-      <div class="semline"><span>${esc(s.name)} · ${s.start?esc(fmtShort(parseISO(s.start)))+" – "+esc(fmtShort(end)):"no dates"} · ${s.weeks} weeks${ONB.hol!==false?" · holidays off":""}</span><button class="linkbtn" id="oSemEdit">${ONB.semOpen?"Done":"Edit"}</button></div>
+      <div class="semline"><span>${esc(s.name)} · ${s.start?esc(fmtShort(parseISO(s.start)))+" – "+esc(fmtShort(end)):"no dates"} · ${s.weeks} weeks${U?` · ${nOff} day${nOff===1?"":"s"} off${nSw?` · ${nSw} make-up day${nSw===1?"":"s"}`:""}`:(ONB.hol!==false?" · holidays off":"")}</span><button class="linkbtn" id="oSemEdit">${ONB.semOpen?"Done":"Edit"}</button></div>
+      ${U?`<p class="semsrc">From <a href="${esc(U.src)}" target="_blank" rel="noopener">${esc(U.short||U.name)}’s official calendar</a></p>`:""}
+      ${UD.length?`<label class="chk unidates"><input type="checkbox" id="oUniDates" ${ONB.uniDates!==false?"checked":""}> Add ${UD.length} university date${UD.length===1?"":"s"} to my tasks <span class="quiet">(${esc(UD.slice(0,2).map(x=>x.title.replace(/ \(.*\)$/,"")).join(", "))}${UD.length>2?"…":""})</span></label>`:""}
       ${ONB.semOpen?`<div class="osem"><div class="field" style="margin:0"><label for="oStart">Starts</label><input id="oStart" class="inp" type="date" value="${esc(s.start)}"><span class="datehint tnum" id="oStartHint">${s.start?esc(longDate(parseISO(s.start))):""}</span></div>
         <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
-        <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on holidays</label></div>`:""}
+        ${U?"":`<label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on holidays</label>`}</div>`:""}
       ${catalogBox()}
       <div class="olist">`;
     const inCat=c=>{const C=ONB.cat; return C&&C.loaded&&!C.applied&&C.info[courseNum(c)]};
@@ -2469,12 +2529,21 @@ async function addCourseNoTasks(el){
   if(info&&ONB.cat&&ONB.cat.loaded){ONB.cat.info[num]=info; ONB.cat.applied=false;}
   render(); toast("Added "+name);
 }
+/* the university's own dates (exam periods, make-up days...) as tasks of a "<University> dates" course; no reminders, they close themselves once past */
+function addUniDates(s){
+  const U=s&&s.uni&&uniOf(s.uni); if(!U||ONB.uniDates===false) return;
+  const D=uniDates(U); if(!D.length) return;
+  const cid="uni-"+U.id;
+  if(!course(cid)) S.courses.push({id:cid,name:(U.short||U.name)+" dates",color:"#8a94a6",uniDates:true});
+  D.forEach(x=>{ if(S.tasks.some(t=>t.course===cid&&t.title===x.title)) return;
+    S.tasks.push({id:uid(),title:x.title,course:cid,due:x.date+"T09:00:00",notes:"From the university’s official calendar",link:U.src||"",tentative:false,done:false,info:true}); });
+}
 function finishSetup(saveTimes){
   const s=sem();
   if(saveTimes){
     const st=$("#oStart"), wk=$("#oWeeks");
     if(st&&st.value) s.start=st.value; if(wk) s.weeks=Math.max(1,Math.min(30,+wk.value||13));
-    if(ONB.hol!==false){const en=iso(addDays(weekStart(s,s.weeks-1),6));
+    if(ONB.hol!==false&&!s.uni){const en=iso(addDays(weekStart(s,s.weeks-1),6));
       IL_HOLIDAYS.forEach(([f,t,l])=>{if(t>=s.start&&f<=en&&!s.breaks.some(x=>x.from===f&&x.label===l))s.breaks.push({from:f,to:t,label:l})});
       s.breaks.sort((a,b)=>a.from.localeCompare(b.from));}
     Object.entries(ONB.times).forEach(([cid,rows])=>{
@@ -2482,6 +2551,7 @@ function finishSetup(saveTimes){
       rows.filter(r=>r.start&&r.end).forEach(r=>S.slots.push({id:r.id||uid(),course:cid,weekday:+r.weekday,start:r.start,end:r.end,kind:r.kind||"Lecture",room:r.room||"",recorded:!!r.recorded}));
     });
   }
+  addUniDates(s);
   S.setup=null; S.ui.mode=S.tasks.length||!S.slots.length?"tasks":"lectures"; S.ui.week=null; S.ui.course="all";
   Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:"",cat:null});
   ONB.semOpen=false; ONB.addOpen=false; ONB.remOther=false;
@@ -2543,6 +2613,7 @@ function wireSetup(el,n){
     const ce=el.querySelector("#oCatEx"); if(ce) ce.onchange=()=>{ONB.cat.exams=ce.checked};
     on("oDone",()=>finishSetup(true));
     const h=el.querySelector("#oHol"); if(h) h.onchange=()=>{ONB.hol=h.checked};
+    const ud=el.querySelector("#oUniDates"); if(ud) ud.onchange=()=>{ONB.uniDates=ud.checked};
     const st=el.querySelector("#oStart"), wk=el.querySelector("#oWeeks");
     if(st) st.oninput=st.onchange=()=>{sem().start=st.value;const hh=el.querySelector("#oStartHint");if(hh)hh.textContent=st.value?longDate(parseISO(st.value)):""}; if(wk) wk.onchange=()=>{sem().weeks=Math.max(1,Math.min(30,+wk.value||13))};
     el.querySelectorAll("[data-addt]").forEach(b=>b.onclick=()=>{const rows=ONB.times[b.dataset.addt];const last=rows[rows.length-1];rows.push({id:uid(),weekday:last?last.weekday:0,start:last?last.start:"10:00",end:last?last.end:"11:45",kind:rows.length?"Tutorial":"Lecture",room:""});render()});
@@ -2586,7 +2657,7 @@ async function checkReminders(){
   const now=Date.now(), leads=S.rem.leads.slice().sort((a,b)=>a-b);
   let changed=false;
   for(const t of S.tasks){
-    if(t.done||t.skip||!t.due) continue;
+    if(t.done||t.skip||t.info||!t.due) continue;
     const due=Date.parse(t.due); if(!(due>now)) continue;
     const c=course(t.course); if(c&&c.archived) continue;
     const reached=leads.filter(L=>now>=due-L*6e4); if(!reached.length) continue;
@@ -2615,7 +2686,7 @@ async function editReminders(){
   m.querySelector("#rOn").onchange=sync; sync();
   const redraw=()=>{m.querySelector("#rLeads").innerHTML=remPicker();wireRemPicker(m.querySelector("#rLeads"),redraw);m.querySelector("#rOn").checked=S.rem.on;sync()}; const saved=S.rem.leads.slice(), savedOn=S.rem.on; wireRemPicker(m.querySelector("#rLeads"),redraw);
   m.querySelector("#rTest").onclick=async()=>{const ok=await notifyAllowed(true); if(!ok){toast("Notifications are blocked. Allow Taskal in your computer’s notification settings.");return}
-    const next=S.tasks.filter(t=>!t.done&&!t.skip&&t.due&&Date.parse(t.due)>Date.now()).sort((a,b)=>Date.parse(a.due)-Date.parse(b.due))[0];
+    const next=S.tasks.filter(t=>!t.done&&!t.skip&&!t.info&&t.due&&Date.parse(t.due)>Date.now()).sort((a,b)=>Date.parse(a.due)-Date.parse(b.due))[0];
     await notify(next?dueWords(new Date(next.due)):"Taskal reminders are on", next?next.title+" (test)":"You’ll get a notification before each deadline."); toast("Test sent")};
   m.querySelector("#rClose").onclick=()=>{S.rem.leads=saved;S.rem.on=savedOn;closeModal()};
   m.querySelector("#rSave").onclick=async()=>{
@@ -2727,6 +2798,8 @@ document.addEventListener("click",e=>{
   const a=e.target.closest('a[target="_blank"]'); if(!a||!IS_DESKTOP) return;
   e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
 });
+/* read-only handle for automated tests */
+window.Taskal={get S(){return S},sem:()=>sem(),uniOf,uniDates,slotsOn,swapFor,parseISO};
 if(DEMO){$("#demoBar").hidden=false;$("#demoRestart").onclick=()=>{Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:""});S=setupState();render();scrollTo(0,0)}}
 S=load();
 render();
