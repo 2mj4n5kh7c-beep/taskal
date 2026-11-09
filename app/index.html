@@ -2142,7 +2142,7 @@ function moodleExport(id){
     case "tau": return {url:`https://moodle.tau.ac.il/${y}/calendar/export.php`,direct:true};
     case "technion": return {url:`https://moodle${y%100}.technion.ac.il/calendar/export.php`,direct:true};
     case "biu": return {url:"https://lemida.biu.ac.il/calendar/export.php",direct:true};
-    case "huji": return {url:"https://moodle.huji.ac.il/",direct:false};
+    case "huji": return {url:`https://moodle.huji.ac.il/${y}-${pad((y+1)%100)}/calendar/export.php`,direct:true};
     case "bgu": return {url:"https://moodle.bgu.ac.il/",direct:false};
     case "reichman": return {url:"https://moodle.runi.ac.il/",direct:false};
     case "ariel": return {url:"https://moodlearn.ariel.ac.il/calendar/export.php",direct:true};
