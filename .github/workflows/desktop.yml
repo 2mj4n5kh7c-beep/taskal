@@ -48,3 +48,24 @@ jobs:
           releaseDraft: false
           prerelease: true
           args: ${{ matrix.args }}
+
+  # Permanent links that always give the newest Taskal 3:
+  # https://github.com/2mj4n5kh7c-beep/taskal/releases/download/t3-latest/Taskal-3-Windows.exe
+  # https://github.com/2mj4n5kh7c-beep/taskal/releases/download/t3-latest/Taskal-3-Mac.dmg
+  latest:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy this version's installers to the t3-latest release
+        run: |
+          V=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          mkdir dl && cd dl
+          gh release download "t3-v$V" --pattern '*_x64-setup.exe' --pattern '*_universal.dmg'
+          mv *_x64-setup.exe Taskal-3-Windows.exe
+          mv *_universal.dmg Taskal-3-Mac.dmg
+          gh release view t3-latest >/dev/null 2>&1 || gh release create t3-latest --prerelease --title "Taskal 3 (always the newest)" --notes "Permanent download links for the newest Taskal 3."
+          gh release edit t3-latest --notes "Permanent download links for the newest Taskal 3. Currently: v$V."
+          gh release upload t3-latest Taskal-3-Windows.exe Taskal-3-Mac.dmg --clobber
