@@ -1379,7 +1379,7 @@ function renderLectures(){
     });
     h+=`</div><div class="lechint"><div class="legend" aria-label="What the circles mean"><span><i class="lg up"></i>Coming up</span><span><i class="lg miss"></i>To catch up</span><span><i class="lg seen"></i>Seen</span></div><p class="hint">Tap to mark seen · ▶ opens the recording · note icon for “seen till 00:57”</p></div>`;
   } else {
-    const t=today(), sorted=slots.slice().sort((a,b)=>a.course.localeCompare(b.course)||a.weekday-b.weekday||a.start.localeCompare(b.start));
+    const t=today(), sorted=slots.slice().sort((a,b)=>a.weekday-b.weekday||toMin(a.start)-toMin(b.start)||course(a.course).name.localeCompare(course(b.course).name)); // week order: Sunday morning first
     h+=`<div class="matrix-card glass"><table class="matrix"><thead><tr><th></th>${Array.from({length:s.weeks},(_,i)=>`<th class="tnum ${i===cur?"now":""}" title="${fmtShort(weekStart(s,i))}">${i===cur?"Now":i+1}</th>`).join("")}</tr></thead><tbody>`;
     sorted.forEach(sl=>{
       const c=course(sl.course);
