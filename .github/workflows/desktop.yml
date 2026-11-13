@@ -4,12 +4,18 @@ on:
   push:
     tags: ['t3-v*']
   workflow_dispatch:
+    inputs:
+      only_latest:
+        description: 'Skip the build; only refresh the t3-latest links from the current version'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: ${{ !inputs.only_latest }}
     strategy:
       fail-fast: false
       matrix:
@@ -54,6 +60,7 @@ jobs:
   # https://github.com/2mj4n5kh7c-beep/taskal/releases/download/t3-latest/Taskal-3-Mac.dmg
   latest:
     needs: build
+    if: ${{ always() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
