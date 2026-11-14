@@ -2471,7 +2471,7 @@ function renderSetup(){
         ${U?"":`<label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on holidays</label>`}</div>`:""}
       ${catalogBox()}
       ${(()=>{ if(!CATALOGS[S.uni]) autoTimesFromMoodle(); const empty=activeCourses().filter(c=>!(ONB.times[c.id]||[]).length).length;
-        if(CATALOGS[S.uni]) return "";
+        if(CATALOGS[S.uni]||(!ONB.autoN&&!empty)) return "";
         return `<div class="portalbox">${ONB.autoN?`<p class="ok">Found ${ONB.autoN} weekly session${ONB.autoN===1?"":"s"} in your Moodle calendar. Check them below.</p>`:""}
           ${empty?`<p><b>${empty} course${empty===1?" has":"s have"} no times yet.</b> Get them from your student portal: if your weekly timetable there has <b>Export to calendar</b>, <b>Sync to Google Calendar</b> or <b>iCal</b>, use it here.</p>
           <button class="pill primary" id="oPortal">Get my timetable from a calendar</button>`:""}</div>`})()}
