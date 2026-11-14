@@ -222,6 +222,7 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .cal-t .dot{width:7px;height:7px}
 .cal-t .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .task.skipped{opacity:.6}
+.portalbox{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;display:grid;gap:8px}.portalbox p{margin:0;font-size:13.5px;line-height:1.5}.portalbox .ok{color:var(--good,#2e7d4f)}.portalbox .pill{justify-self:start}
 .offlabel.swap,.offtag.swap{color:var(--accent)}
 .sess.flash{animation:flash 1.1s ease 2}@keyframes flash{50%{box-shadow:0 0 0 3px var(--accent)}}@media (prefers-reduced-motion: reduce){.sess.flash{animation:none;box-shadow:0 0 0 3px var(--accent)}}
 .semsrc{margin:-6px 2px 10px;font-size:12.5px;color:var(--muted)}.semsrc a{color:inherit}
@@ -1991,6 +1992,25 @@ function parseTimetable(text){
   }
   return out.sort((a,b)=>a.weekday-b.weekday||a.start.localeCompare(b.start));
 }
+function weeklyFromMoodle(text){
+  const groups=new Map();
+  parseIcs(text||"").forEach(ev=>{const a=ev.DTSTART,b=ev.DTEND; if(!a||!b) return; const mins=(b-a)/6e4; if(mins<20||mins>6*60) return;
+    const cat=(ev.CATEGORIES||"").trim(); if(!cat) return;
+    const r={cat,weekday:a.getDay(),start:pad(a.getHours())+":"+pad(a.getMinutes()),end:pad(b.getHours())+":"+pad(b.getMinutes()),kind:kindOf(ev.SUMMARY||""),room:(ev.LOCATION||"").trim()};
+    const k=[norm(cat),r.weekday,r.start,r.end].join("|"), wk=iso(sundayOf(a));
+    if(!groups.has(k)){r.weeks=new Set();groups.set(k,r)} groups.get(k).weeks.add(wk);
+  });
+  return [...groups.values()].filter(r=>r.weeks.size>=2);
+}
+/* setup, timetable step: where the university has no catalog, fill empty courses with the weekly sessions found in the Moodle calendar */
+function autoTimesFromMoodle(){
+  if(ONB.autoDone||!ONB.text) return; ONB.autoDone=true; let n=0;
+  weeklyFromMoodle(ONB.text).forEach(r=>{const c=matchCourse(r.cat); if(!c||c.archived) return;
+    const L=ONB.times[c.id]||(ONB.times[c.id]=S.slots.filter(x=>x.course===c.id).map(x=>Object.assign({},x)));
+    if(L.some(x=>!x.auto)) return; if(L.some(x=>+x.weekday===r.weekday&&x.start===r.start)) return;
+    L.push({id:uid(),course:c.id,weekday:r.weekday,start:r.start,end:r.end,kind:r.kind,room:r.room,auto:true}); n++;});
+  ONB.autoN=n;
+}
 function guessCourseFor(name){
   const n=name.toLowerCase(), num=(name.match(/\b\d{4,6}\b/)||[])[0], act=activeCourses();
   if(num){const c=act.find(c=>c.name.includes(num)||(c.moodle||"").includes(num)); if(c) return c.id}
@@ -2000,7 +2020,10 @@ function guessCourseFor(name){
 }
 function importTimetable(){
   let rows=[];
-  const m=openModal(`<h2>Import your timetable</h2><p class="hint">Use a calendar file of your weekly classes, or paste your timetable as text (one class per line, like “Sun 10:00–11:45 Classical Mechanics”). Taskal finds the weekly times; you check them before anything is added.</p>
+  const m=openModal(`<h2>Import your timetable</h2>
+    <div class="field"><label for="ttUrl">Calendar link of your timetable</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="ttUrl" class="inp" style="flex:1;min-width:0" placeholder="https://… or webcal://…" spellcheck="false"><button class="pill" id="ttUrlGo" style="flex:none">Read</button></div>
+      <p class="hint" style="margin:6px 0 0">From your student portal’s <b>Export to calendar / iCal</b>. If the portal only <b>syncs to Google Calendar</b>: in Google Calendar open <b>Settings</b> → that calendar → <b>Secret address in iCal format</b>, and paste it here.</p></div>
+    <p class="hint">Or use a calendar file of your weekly classes, or paste your timetable as text (one class per line, like “Sun 10:00–11:45 Classical Mechanics”). Taskal finds the weekly times; you check them before anything is added.</p>
     <div class="row" style="gap:8px;margin-bottom:10px"><button class="pill" id="ttFile">Choose a calendar file (.ics)</button></div>
     <div class="field"><label for="ttText">Or paste your timetable</label><textarea id="ttText" class="inp" dir="auto" rows="5" placeholder="Sun 10:00-11:45 Classical Mechanics, room 105&#10;יום ב' 14:00-15:45 תרגול מכניקה"></textarea></div>
     <div id="ttRes"></div>
@@ -2016,6 +2039,8 @@ function importTimetable(){
     };
     const load=text=>{rows=parseTimetable(text);rows.forEach(r=>r.course=guessCourseFor(r.name)||"__new");draw()};
     m.querySelector("#ttText").addEventListener("input",e=>load(e.target.value));
+    const ug=m.querySelector("#ttUrlGo"); ug.onclick=async()=>{const u=m.querySelector("#ttUrl").value.trim().replace(/^webcal:/i,"https:"); if(!/^https?:\/\//i.test(u)){res.innerHTML=`<div class="result err">Paste a link that starts with https:// or webcal://</div>`;return}
+      const done=busy(ug,"Reading…"); try{const t=await fetchCalendar(u); if(!/BEGIN:VCALENDAR/.test(t)) throw new Error("That link isn’t a calendar."); load(t); if(!rows.length) res.innerHTML=`<div class="result err">The calendar has no classes that repeat every week.</div>`}catch(e){res.innerHTML=`<div class="result err">Couldn’t read that link (${esc(e.message||String(e))}).</div>`}finally{done()}};
     m.querySelector("#ttFile").onclick=()=>{const f=$("#fileIcs");f.value="";f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();r.onload=()=>load(String(r.result));r.readAsText(file)};f.click()};
     m.querySelector("#ttCancel").onclick=closeModal;
     go.onclick=()=>{
@@ -2445,6 +2470,11 @@ function renderSetup(){
         <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
         ${U?"":`<label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on holidays</label>`}</div>`:""}
       ${catalogBox()}
+      ${(()=>{ if(!CATALOGS[S.uni]) autoTimesFromMoodle(); const empty=activeCourses().filter(c=>!(ONB.times[c.id]||[]).length).length;
+        if(CATALOGS[S.uni]) return "";
+        return `<div class="portalbox">${ONB.autoN?`<p class="ok">Found ${ONB.autoN} weekly session${ONB.autoN===1?"":"s"} in your Moodle calendar. Check them below.</p>`:""}
+          ${empty?`<p><b>${empty} course${empty===1?" has":"s have"} no times yet.</b> Get them from your student portal: if your weekly timetable there has <b>Export to calendar</b>, <b>Sync to Google Calendar</b> or <b>iCal</b>, use it here.</p>
+          <button class="pill primary" id="oPortal">Get my timetable from a calendar</button>`:""}</div>`})()}
       <div class="olist">`;
     const inCat=c=>{const C=ONB.cat; return C&&C.loaded&&!C.applied&&C.info[courseNum(c)]};
     activeCourses().filter(c=>!inCat(c)).forEach(c=>{
@@ -2608,6 +2638,7 @@ function wireSetup(el,n){
     on("oBack",()=>{S.setup=2;render()});
     on("oLater",()=>finishSetup(false));
     on("oTT",importTimetable);
+    on("oPortal",importTimetable);
     on("oCat",loadCatalog); on("oCatApply",applyCatalog);
     on("oNewCAdd",()=>addCourseNoTasks(el));
     on("oSemEdit",()=>{ONB.semOpen=!ONB.semOpen;render()});
