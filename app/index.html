@@ -228,6 +228,21 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .qadd{display:grid;gap:8px;margin-top:4px}.qrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.qrow .inp{width:auto}.qlab{font-size:13px;color:var(--muted);margin:0 2px}
 .qc{border:1px solid var(--line);background:transparent;color:inherit;border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
 .qc:hover{border-color:var(--accent)}.qc.on{background:var(--accent);border-color:var(--accent);color:#fff}.qrow .pill[disabled]{opacity:.5;cursor:default}.qrow [data-qadd]{margin-inline-start:auto;padding-inline:18px}
+.wk{display:grid;gap:10px;margin:0 0 12px}
+.wkbar{min-height:78px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;display:grid;gap:8px;align-content:center}.wkbar.on{border-color:var(--accent)}
+.wkbar p{margin:0;font-size:13.5px;line-height:1.5}.wkbar .left{color:var(--muted);font-size:12.5px}
+.wkgrid{--wh:30px;display:grid;grid-template-columns:40px repeat(6,minmax(0,1fr));gap:0 4px}
+.wkhours{padding-top:26px}.wkhours span{display:block;height:var(--wh);font-size:11px;color:var(--muted);transform:translateY(-7px);text-align:end;padding-inline-end:4px}
+.wkhead{height:26px;font-size:12.5px;font-weight:600;text-align:center;line-height:26px}
+.wkbody{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.wkcell{display:block;width:100%;height:var(--wh);border:0;border-top:1px solid var(--line);background:transparent;cursor:pointer;padding:0}.wkcell:first-child{border-top:0}
+.wkcell:hover,.wkcell:focus-visible{background:rgba(47,111,214,.12);outline:none}
+.wkblk{position:absolute;left:2px;right:2px;border-radius:6px;background:rgba(47,111,214,.14);background:color-mix(in srgb,var(--c) 24%,var(--bg,#fff));border-inline-start:3px solid var(--c);padding:2px 5px;font-size:11px;line-height:1.25;overflow:hidden;display:grid;align-content:start;text-align:start}
+.wkblk b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-inline-end:12px}.wkblk small{color:var(--muted);white-space:nowrap;overflow:hidden}
+.wkblk button{position:absolute;top:0;inset-inline-end:0;border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px;line-height:1;padding:3px 5px;opacity:.55}.wkblk button:hover,.wkblk button:focus-visible{opacity:1}
+.wkblk.ghost{background:transparent;border:1.5px dashed var(--accent);pointer-events:none}
+.wkcs{display:flex;flex-wrap:wrap;gap:6px}.wkc{display:inline-flex;align-items:center;gap:6px;max-width:100%}.wkc span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wkdet{margin:0 0 10px}.wkdet>summary{cursor:pointer;font-size:13px;color:var(--muted);margin-bottom:8px}
 .pastehint{margin:0 0 6px;padding:8px 10px;border-radius:8px;background:var(--accent-soft,rgba(47,111,214,.08))}
 .portalbox{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;display:grid;gap:8px}.portalbox p{margin:0;font-size:13.5px;line-height:1.5}.portalbox .ok{color:var(--good,#2e7d4f)}.portalbox .pill{justify-self:start}
 .offlabel.swap,.offtag.swap{color:var(--accent)}
@@ -2483,7 +2498,8 @@ function renderSetup(){
   if(n===3){
     const s=sem(), U=s.uni&&uniOf(s.uni), T=U&&uniTerm(U), end=T&&T.start===s.start?parseISO(T.end):(s.start?addDays(weekStart(s,s.weeks-1),5):null);
     const nOff=(s.breaks||[]).length, nSw=(s.swaps||[]).length, UD=U?uniDates(U):[];
-    h+=`<h1>Your week</h1>
+    const GRID=!CATALOGS[S.uni]&&activeCourses().length>0;
+    h+=`<h1>${GRID?"Add your classes":"Your week"}</h1>
       <div class="semline"><span>${esc(s.name)} · ${s.start?esc(fmtShort(parseISO(s.start)))+" – "+esc(fmtShort(end)):"no dates"} · ${s.weeks} weeks${U?` · ${nOff} day${nOff===1?"":"s"} off${nSw?` · ${nSw} make-up day${nSw===1?"":"s"}`:""}`:(ONB.hol!==false?" · holidays off":"")}</span><button class="linkbtn" id="oSemEdit">${ONB.semOpen?"Done":"Edit"}</button></div>
       ${U?`<p class="semsrc">From <a href="${esc(U.src)}" target="_blank" rel="noopener">${esc(U.short||U.name)}’s official calendar</a></p>`:""}
       ${UD.length?`<label class="chk unidates"><input type="checkbox" id="oUniDates" ${ONB.uniDates!==false?"checked":""}> Add ${UD.length} university date${UD.length===1?"":"s"} to my tasks <span class="quiet">(${esc(UD.slice(0,2).map(x=>x.title.replace(/ \(.*\)$/,"")).join(", "))}${UD.length>2?"…":""})</span></label>`:""}
@@ -2491,20 +2507,15 @@ function renderSetup(){
         <div class="field" style="margin:0"><label for="oWeeks">Weeks</label><input id="oWeeks" class="inp" type="number" min="1" max="30" value="${s.weeks}"></div>
         ${U?"":`<label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" id="oHol" ${ONB.hol!==false?"checked":""}> No classes on holidays</label>`}</div>`:""}
       ${catalogBox()}
-      ${(()=>{ if(!CATALOGS[S.uni]) autoTimesFromMoodle(); const empty=activeCourses().filter(c=>!(ONB.times[c.id]||[]).length).length;
-        if(CATALOGS[S.uni]||(!ONB.autoN&&!empty)) return "";
-        return `<div class="portalbox">${ONB.autoN?`<p class="ok">Found ${ONB.autoN} weekly session${ONB.autoN===1?"":"s"} in your Moodle calendar. Check them below.</p>`:""}
-          ${empty?`<p><b>${empty} course${empty===1?" has":"s have"} no lecture times yet.</b> Pick the way that works for your university:</p>
-          <div class="routes">
-            <button class="route" id="oPortal"><b>From a calendar</b><span>Your portal has Export to calendar, iCal or Sync to Google Calendar</span></button>
-            <button class="route" id="oPortalPaste"><b>Paste from the portal’s website</b><span>Copy your weekly timetable page and paste it</span></button>
-            <button class="route" id="oByHand"><b>Add them by hand</b><span>A few taps per class, about 2 minutes</span></button>
-          </div>`:""}</div>`})()}
+      ${(()=>{ if(CATALOGS[S.uni]){ if(IS_DESKTOP&&!ONB.cat&&activeCourses().some(c=>courseNum(c))) Promise.resolve().then(()=>{ if(!ONB.cat&&S.setup===3) loadCatalog() }); return ""; }
+        autoTimesFromMoodle();
+        return (ONB.autoN?`<div class="portalbox"><p class="ok">Found ${ONB.autoN} weekly session${ONB.autoN===1?"":"s"} in your Moodle calendar. Check them below.</p></div>`:"")+weekPick()})()}
+      ${GRID?`<details class="wkdet" id="wkDet" ${ONB.detOpen?"open":""}><summary>Edit exact times and rooms</summary>`:""}
       <div class="olist">`;
     const inCat=c=>{const C=ONB.cat; return C&&C.loaded&&!C.applied&&C.info[courseNum(c)]};
     activeCourses().filter(c=>!inCat(c)).forEach(c=>{
       const rows=ONB.times[c.id]||(ONB.times[c.id]=S.slots.filter(x=>x.course===c.id).map(x=>Object.assign({},x)));
-      const qOpen=!rows.length||ONB.qa===c.id, Q=(ONB.q||(ONB.q={}))[c.id]||(ONB.q[c.id]={day:null,start:"",len:90,kind:rows.length?"Tutorial":"Lecture"});
+      const qOpen=(!GRID&&!rows.length)||ONB.qa===c.id, Q=(ONB.q||(ONB.q={}))[c.id]||(ONB.q[c.id]={day:null,start:"",len:90,kind:rows.length?"Tutorial":"Lecture"});
       h+=`<div class="ogroup ${rows.length?"":"empty"}" data-c="${esc(c.id)}"><div class="ogh"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b></div>
         ${rows.map((r,j)=>`<div class="otime" data-j="${j}">
           <select class="inp" data-tf="weekday" aria-label="Day">${DAYS_LONG.slice(0,6).map((d,k)=>`<option value="${k}" ${+r.weekday===k?"selected":""}>${d}</option>`).join("")}</select>
@@ -2523,13 +2534,44 @@ function renderSetup(){
             <button class="pill primary sm" data-qadd ${Q.day==null||!Q.start?"disabled":""}>Add</button></div>
         </div>`:`<button class="linkbtn" data-addt="${esc(c.id)}">+ Time</button>`}</div>`;
     });
-    h+=`</div>
+    h+=`</div>${GRID?"</details>":""}
       ${ONB.addOpen?`<div class="row addnc" style="flex-wrap:nowrap;gap:8px"><input id="oNewC" class="inp" dir="auto" placeholder="${CATALOGS[S.uni]?"Course number, e.g. "+CATALOGS[S.uni].example:"Course name"}"><button class="pill" id="oNewCAdd">Add</button></div><div id="oNewCRes"></div>`:""}
-      <div class="alt quiet"><button class="linkbtn" id="oAddC">+ Add a course</button><span>·</span><button class="linkbtn" id="oTT">Paste or upload a timetable</button></div>
+      <div class="alt quiet"><button class="linkbtn" id="oAddC">+ Add a course</button><span>·</span><button class="linkbtn" id="oTT">${GRID?"I have a calendar file or link":"Paste or upload a timetable"}</button></div>
       <div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="linkbtn" id="oLater" style="margin-left:auto">Later</button><button class="pill primary" id="oDone">Finish</button></div>`;
   }
   el.innerHTML=h+`</div>`;
   wireSetup(el,n);
+}
+/* setup without a course catalog: an empty week. Click the hour a class starts, then the course. */
+function weekPick(){
+  const cs=activeCourses(); if(!cs.length) return "";
+  const all=[]; cs.forEach(c=>{const rows=ONB.times[c.id]||(ONB.times[c.id]=S.slots.filter(x=>x.course===c.id).map(x=>Object.assign({},x))); rows.forEach((r,j)=>all.push({c,r,j}))});
+  const W=ONB.wp, len=ONB.wl||120; let lo=8*60, hi=20*60;
+  all.forEach(({r})=>{const a=toMin(r.start),b=toMin(r.end); if(a<lo) lo=Math.floor(a/60)*60; if(b>hi) hi=Math.ceil(b/60)*60});
+  if(W){const b=toMin(W.start)+len; if(b>hi) hi=Math.min(24*60,Math.ceil(b/60)*60)}
+  const H=30, n=(hi-lo)/60, hm=m=>pad(Math.floor(m/60)%24)+":"+pad(m%60), px=m=>Math.round((m-lo)/60*H);
+  const left=cs.filter(c=>!ONB.times[c.id].length);
+  let bar;
+  if(W){ const h0=Math.floor(toMin(W.start)/60)*60;
+    bar=`<div class="wkbar on"><div class="qrow"><b>${DAYS_LONG[W.day]}</b><span class="qlab">at</span>
+        <select class="inp" id="wkStart" aria-label="Starts">${[0,15,30,45].map(q=>`<option ${W.start===hm(h0+q)?"selected":""}>${hm(h0+q)}</option>`).join("")}</select>
+        <span class="qlab">for</span>${[[60,"1h"],[90,"1½h"],[120,"2h"],[180,"3h"],[240,"4h"]].map(([m,l])=>`<button class="qc ${len===m?"on":""}" data-wl="${m}" aria-pressed="${len===m}">${l}</button>`).join("")}
+        <button class="linkbtn" id="wkCancel" style="margin-inline-start:auto">Cancel</button></div>
+      <div class="qrow">${["Auto","Lecture","Tutorial","Lab"].map(k=>`<button class="qc ${(ONB.wk||"Auto")===k?"on":""}" data-wk="${k}" aria-pressed="${(ONB.wk||"Auto")===k}">${k==="Auto"?"Lecture, then tutorial":k}</button>`).join("")}</div>
+      <p><b>Which course?</b></p><div class="wkcs">${cs.map(c=>`<button class="qc wkc" data-wc="${esc(c.id)}"><span class="dot" style="--c:${esc(c.color)}"></span><span dir="auto">${esc(c.name)}</span></button>`).join("")}</div></div>`;
+  } else {
+    bar=`<div class="wkbar"><p><b>Click the hour a class starts</b>, then pick the course. Do this for each class in your week.</p>
+      ${all.length?`<p class="left">${left.length?`Still without classes: ${left.map(c=>`<span dir="auto">${esc(c.name)}</span>`).join(", ")}`:"Every course has a class. Press Finish when your week is complete."}</p>`:""}</div>`;
+  }
+  let g=`<div class="wkhours">${Array.from({length:n},(_,i)=>`<span>${hm(lo+i*60)}</span>`).join("")}</div>`;
+  for(let d=0;d<6;d++){
+    g+=`<div class="wkcol"><div class="wkhead">${DAYS[d]}</div><div class="wkbody" style="height:${n*H}px">`
+      +Array.from({length:n},(_,i)=>`<button class="wkcell" data-wd="${d}" data-wm="${lo+i*60}" aria-label="${DAYS_LONG[d]} ${hm(lo+i*60)}"></button>`).join("")
+      +all.filter(x=>+x.r.weekday===d).map(({c,r,j})=>`<div class="wkblk" style="--c:${esc(c.color)};top:${px(toMin(r.start))}px;height:${Math.max(18,px(toMin(r.end))-px(toMin(r.start))-1)}px" title="${esc(c.name)} · ${esc(r.start)}–${esc(r.end)} · ${esc(r.kind||"")}"><b dir="auto">${esc(c.name)}</b><small>${esc(r.start)}–${esc(r.end)} · ${esc(r.kind||"")}</small><button data-wrm="${esc(c.id)}|${j}" aria-label="Remove ${esc(c.name)} ${DAYS_LONG[d]} ${esc(r.start)}">×</button></div>`).join("")
+      +(W&&W.day===d?`<div class="wkblk ghost" style="top:${px(toMin(W.start))}px;height:${Math.round(len/60*H)-1}px"></div>`:"")
+      +`</div></div>`;
+  }
+  return `<div class="wk">${bar}<div class="wkgrid">${g}</div></div>`;
 }
 /* the catalog panel on the timetable step: pick your groups, Taskal fills in the times */
 function catalogBox(){
@@ -2631,16 +2673,18 @@ function wireSetup(el,n){
     el.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ONB.src=b.dataset.src;ONB.err="";render();const f=el.querySelector("#oUrl,#oFile,#oManual");f&&f.focus()});
     on("oFind",async()=>{
       const url=(el.querySelector("#oUrl").value||"").trim();
+      if(!S.uni&&uniFromUrl(url)) applyUni(uniFromUrl(url));
+      if(!S.uni){ONB.err="Choose your university first, so Taskal knows where your lectures come from.";render();return}
       if(!/^https?:\/\//i.test(url)){ONB.err="Paste the full link, starting with https://";render();return}
       ONB.busy=true;ONB.err="";render();
       try{const t=await fetchCalendar(url); onbLoad(t); S.cal.url=url; S.cal.linkYear=academicYear(today());}
       catch(e){ONB.err=IS_DESKTOP?(/40[13]/.test(String(e))?"Your university refused the link. Make a new one in Moodle and try again.":String(e.message||e)):"A web browser can’t read this link. Choose the calendar file instead, or use the Taskal app."}
       ONB.busy=false;render();
     });
-    on("oFile",()=>{const f=$("#fileIcs");f.value="";f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();
+    on("oFile",()=>{ if(!S.uni){ONB.err="Choose your university first.";render();return} const f=$("#fileIcs");f.value="";f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();
       r.onload=()=>{try{onbLoad(String(r.result));ONB.err=""}catch(e){ONB.err=e.message}render()};r.readAsText(file)};f.click()});
     on("oSample",()=>{onbLoad(sampleIcs());ONB.err="";render()});
-    on("oManual",()=>{ONB.text="BEGIN:VCALENDAR\nEND:VCALENDAR";ONB.cats=[];ONB.extra=[""];render()});
+    on("oManual",()=>{ if(!S.uni){ONB.err="Choose your university first.";render();return} ONB.text="BEGIN:VCALENDAR\nEND:VCALENDAR";ONB.cats=[];ONB.extra=[""];render()});
     on("oAddX",()=>{ONB.extra.push("");render();const ins=el.querySelectorAll("[data-extra]");ins.length&&ins[ins.length-1].focus()});
     on("oSkip",()=>finishSetup(false));
     on("oBack1",()=>{ONB.cats=null;ONB.text=null;render()});
@@ -2672,9 +2716,17 @@ function wireSetup(el,n){
     on("oBack",()=>{S.setup=2;render()});
     on("oLater",()=>finishSetup(false));
     on("oTT",importTimetable);
-    on("oPortal",()=>importTimetable());
-    on("oPortalPaste",()=>importTimetable("paste"));
-    on("oByHand",()=>{const g=el.querySelector(".ogroup.empty"); if(g){g.scrollIntoView({behavior:"smooth",block:"center"}); const b=g.querySelector("[data-qd]"); if(b) b.focus()}});
+    const hm=m=>pad(Math.floor(m/60)%24)+":"+pad(m%60);
+    el.querySelectorAll("[data-wd]").forEach(b=>b.onclick=()=>{ONB.wp={day:+b.dataset.wd,start:hm(+b.dataset.wm)}; render()});
+    const wst=el.querySelector("#wkStart"); if(wst) wst.onchange=()=>{ONB.wp.start=wst.value; render()};
+    el.querySelectorAll("[data-wl]").forEach(b=>b.onclick=()=>{ONB.wl=+b.dataset.wl; render()});
+    el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{ONB.wk=b.dataset.wk; render()});
+    on("wkCancel",()=>{ONB.wp=null; render()});
+    el.querySelectorAll("[data-wc]").forEach(b=>b.onclick=()=>{const W=ONB.wp, cid=b.dataset.wc, rows=ONB.times[cid]; if(!W||!rows) return;
+      const kind=ONB.wk&&ONB.wk!=="Auto"?ONB.wk:(rows.some(r=>r.kind==="Lecture")?"Tutorial":"Lecture");
+      rows.push({id:uid(),course:cid,weekday:W.day,start:W.start,end:hm(toMin(W.start)+(ONB.wl||120)),kind,room:""}); ONB.wp=null; render()});
+    el.querySelectorAll("[data-wrm]").forEach(b=>b.onclick=e=>{e.stopPropagation(); const k=b.dataset.wrm.lastIndexOf("|"), rows=ONB.times[b.dataset.wrm.slice(0,k)]; if(rows){rows.splice(+b.dataset.wrm.slice(k+1),1); render()}});
+    const wdt=el.querySelector("#wkDet"); if(wdt) wdt.ontoggle=()=>{ONB.detOpen=wdt.open};
     on("oCat",loadCatalog); on("oCatApply",applyCatalog);
     on("oNewCAdd",()=>addCourseNoTasks(el));
     on("oSemEdit",()=>{ONB.semOpen=!ONB.semOpen;render()});

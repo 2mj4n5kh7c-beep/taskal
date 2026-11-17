@@ -9,6 +9,10 @@ on:
         description: 'Skip the build; only refresh the t3-latest links from the current version'
         type: boolean
         default: false
+      beta:
+        description: 'Build "Taskal Beta": a separate app with its own empty data. Does not touch the t3-latest links'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -42,12 +46,17 @@ jobs:
 
       - run: npm ci
 
+      # Taskal Beta installs next to Taskal 3 and keeps its own data (different app identifier).
+      - name: Turn this build into Taskal Beta
+        if: ${{ inputs.beta }}
+        run: node -e "const f='src-tauri/tauri.conf.json',c=require('./'+f);c.productName='Taskal Beta';c.identifier='il.taskal.beta';c.app.windows[0].title='Taskal Beta';require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: t3-v__VERSION__
-          releaseName: 'Taskal 3 v__VERSION__'
+          tagName: ${{ inputs.beta && 'beta-v__VERSION__' || 't3-v__VERSION__' }}
+          releaseName: ${{ inputs.beta && 'Taskal Beta v__VERSION__ (testing only)' || 'Taskal 3 v__VERSION__' }}
           releaseBody: |
             **Windows:** download `Taskal 3_..._x64-setup.exe` and run it. If Windows shows "Windows protected your PC", click **More info → Run anyway** (the app isn't signed with a paid certificate).
             **Mac:** download the `.dmg`, drag Taskal 3 to Applications, then right-click → Open the first time.
@@ -60,7 +69,7 @@ jobs:
   # https://github.com/2mj4n5kh7c-beep/taskal/releases/download/t3-latest/Taskal-3-Mac.dmg
   latest:
     needs: build
-    if: ${{ always() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    if: ${{ always() && !inputs.beta && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
