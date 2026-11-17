@@ -243,6 +243,8 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .wkblk.ghost{background:transparent;border:1.5px dashed var(--accent);pointer-events:none}
 .wkcs{display:flex;flex-wrap:wrap;gap:6px}.wkc{display:inline-flex;align-items:center;gap:6px;max-width:100%}.wkc span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wkdet{margin:0 0 10px}.wkdet>summary{cursor:pointer;font-size:13px;color:var(--muted);margin-bottom:8px}
+.lecask{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:39;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;max-width:min(620px,calc(100vw - 32px));padding:10px 14px;border-radius:16px;background:var(--glass-strong,var(--bg,#fff));border:1px solid var(--line);box-shadow:0 6px 24px rgba(16,24,40,.16);font-size:13.5px}
+.lecask .who{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 220px}.lecask .who span:last-child{min-width:0}.lecask small{color:var(--muted);display:block}.lecask .pill{padding:6px 14px;font-size:13px;flex:none}
 .pastehint{margin:0 0 6px;padding:8px 10px;border-radius:8px;background:var(--accent-soft,rgba(47,111,214,.08))}
 .portalbox{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;display:grid;gap:8px}.portalbox p{margin:0;font-size:13.5px;line-height:1.5}.portalbox .ok{color:var(--good,#2e7d4f)}.portalbox .pill{justify-self:start}
 .offlabel.swap,.offtag.swap{color:var(--accent)}
@@ -1474,11 +1476,11 @@ function render(){
   const inSetup=!!S.setup;
   document.body.classList.toggle("in-setup",inSetup);
   $("#setup").hidden=!inSetup;
-  if(inSetup){renderSetup();save();return}
+  if(inSetup){renderSetup();save();const la=document.getElementById("lecAsk");if(la)la.hidden=true;return}
   document.body.classList.toggle("compact",S.ui.density!=="comfortable");
   renderBar(); renderSide();
   if(S.ui.mode==="tasks") renderTasks(); else renderLectures();
-  save();
+  save(); renderLecAsk();
 }
 
 /* ---------- modal ---------- */
@@ -2491,7 +2493,8 @@ function renderSetup(){
       ONB.total=total;
       h+=`<h1>${total} deadline${total===1?"":"s"} found</h1><div class="dls">${rows}</div>
         <label class="chk quiet" style="margin-top:10px"><input type="checkbox" id="oPast" ${ONB.past?"checked":""}> Include past ones</label>
-        <h2 class="sub2">Remind me</h2>${remPicker()}`;
+        <h2 class="sub2">Remind me</h2>${remPicker()}
+        <label class="chk" style="margin-top:12px"><input type="checkbox" id="oLec" ${S.rem.lec?"checked":""}> Also tell me when a lecture starts, and ask if I was there</label>`;
     }
     h+=`<div class="ofoot"><button class="pill" id="oBack">← Back</button><button class="pill primary" id="oNext2" ${ONB.busy?"disabled":""}>Next</button></div>`;
   }
@@ -2707,6 +2710,7 @@ function wireSetup(el,n){
     on("oBack",()=>{S.setup=1;render()});
     const p=el.querySelector("#oPast"); if(p) p.onchange=()=>{ONB.past=p.checked;render()};
     const rp=el.querySelector("#remPick"); if(rp) wireRemPicker(rp,render);
+    const ol=el.querySelector("#oLec"); if(ol) ol.onchange=()=>{S.rem.lec=ol.checked; if(ol.checked&&IS_DESKTOP) notifyAllowed(true)};
     on("oNext2",()=>{
       if(ONB.text&&ONB.total){S.cal.since=ONB.past?null:iso(today()); try{importIcs(ONB.text,{silent:true}); S.cal.lastSync=S.cal.url?new Date().toISOString():null;}catch(e){}}
       S.setup=3; render();
@@ -2802,6 +2806,37 @@ async function checkReminders(){
   Object.keys(S.notified).forEach(k=>{const d=Date.parse(k.split("@")[1]);if(!(d>now-14*864e5)){delete S.notified[k];changed=true}});
   if(changed) save();
 }
+/* ---------- lecture check: a notification when a lecture starts, and a bar asking "were you there?" ---------- */
+function lecturesStarted(){
+  if(!S||S.setup||!S.rem||!S.rem.lec) return [];
+  const s=sem(), t=today(), now=new Date(), nm=now.getHours()*60+now.getMinutes();
+  if(!s||!s.start||t<weekStart(s,0)||t>=addDays(weekStart(s,s.weeks-1),7)||breakFor(s,t)) return [];
+  const mine=new Set(activeCourses().map(c=>c.id));
+  return slotsOn(s,t,S.slots).filter(sl=>mine.has(sl.course)&&toMin(sl.start)<=nm).sort((a,b)=>a.start.localeCompare(b.start)).map(sl=>({sl,k:skey(sl,t),c:course(sl.course),late:nm-toMin(sl.start)}));
+}
+async function checkLectures(){
+  let changed=false;
+  for(const {sl,k,c,late} of lecturesStarted()){
+    const key="lec@"+iso(today())+"@"+k; if(S.notified[key]) continue;
+    S.notified[key]=1; changed=true;
+    if(late>20||S.seen[k]) continue;   // Taskal wasn't running when it started: no late notification, the bar still asks
+    await notify(`${c.name} starts now`, `${sl.kind||"Lecture"} ${sl.start}–${sl.end}${sl.room?" · "+sl.room:""}. Open Taskal to mark that you were there.`);
+  }
+  if(changed) save();
+  renderLecAsk();
+}
+function renderLecAsk(){
+  let el=document.getElementById("lecAsk");
+  const td=iso(today()), no=(S&&S.ui&&S.ui.lecNo&&S.ui.lecNo.day===td)?S.ui.lecNo.keys:{};
+  const x=lecturesStarted().find(x=>!S.seen[x.k]&&!no[x.k]);
+  if(!x){ if(el) el.hidden=true; return; }
+  if(!el){ el=document.createElement("div"); el.id="lecAsk"; el.className="lecask"; el.setAttribute("role","region"); el.setAttribute("aria-label","Lecture check"); document.body.appendChild(el); }
+  el.hidden=false;
+  el.innerHTML=`<div class="who"><span class="dot" style="--c:${esc(x.c.color)}"></span><span><b dir="auto">${esc(x.c.name)}</b><small>${esc(x.sl.kind||"Lecture")} · ${esc(x.sl.start)}–${esc(x.sl.end)} · were you there?</small></span></div>
+    <button class="pill primary" id="lecYes">I was there</button><button class="pill" id="lecNo">Not this one</button>`;
+  el.querySelector("#lecYes").onclick=()=>{S.seen[x.k]=true; render(); toast("Marked as seen")};
+  el.querySelector("#lecNo").onclick=()=>{S.ui.lecNo={day:td,keys:Object.assign({},no,{[x.k]:1})}; save(); renderLecAsk()};
+}
 const AUTO=IS_DESKTOP?(window.__TAURI__.autostart||null):null;
 async function editReminders(){
   let login=false; try{ if(AUTO) login=await AUTO.isEnabled(); }catch(e){}
@@ -2809,6 +2844,8 @@ async function editReminders(){
   const m=openModal(`<h2>Reminders</h2><p class="hint">Taskal sends a notification before each deadline that isn’t done yet.</p>
     <label class="chk" style="margin:10px 0 12px"><input type="checkbox" id="rOn" ${S.rem.on?"checked":""}> <b>Remind me about deadlines</b></label>
     <div id="rLeads" class="rleads">${remPicker()}</div>
+    <label class="chk" style="margin-top:14px"><input type="checkbox" id="rLec" ${S.rem.lec?"checked":""}> <b>Tell me when a lecture starts</b></label>
+    <p class="hint" style="margin:4px 0 0 26px">A notification at the start of each class, and Taskal asks if you were there so you can mark it on the spot.</p>
     ${IS_DESKTOP?`<label class="chk" style="margin-top:14px"><input type="checkbox" id="rLogin" ${login?"checked":""}> Open Taskal in the background when I log in</label>
       <p class="hint" style="margin:4px 0 0 26px">Reminders arrive while Taskal is running. Closing the window keeps it running; quit it from the ${/Mac/i.test(navigator.userAgent)?"Taskal menu":"Taskal icon by the clock"}.</p>`
       :`<p class="hint" style="margin-top:12px">In the browser, reminders arrive only while this page is open. The <a href="https://github.com/2mj4n5kh7c-beep/taskal/releases/latest" target="_blank" rel="noopener">Taskal app</a> reminds you even when its window is closed.</p>`}
@@ -2826,8 +2863,9 @@ async function editReminders(){
     /* leads were updated live by the picker */
     const lg=m.querySelector("#rLogin");
     if(lg&&AUTO){try{ if(lg.checked&&!login) await AUTO.enable(); if(!lg.checked&&login) await AUTO.disable(); }catch(e){}}
-    if(S.rem.on) await notifyAllowed(true);
-    closeModal(); save(); toast(S.rem.on?"Reminders saved":"Reminders turned off"); checkReminders();
+    S.rem.lec=m.querySelector("#rLec").checked;
+    if(S.rem.on||S.rem.lec) await notifyAllowed(true);
+    closeModal(); save(); toast(S.rem.on||S.rem.lec?"Reminders saved":"Reminders turned off"); checkReminders(); checkLectures();
   };
 }
 
@@ -2940,7 +2978,7 @@ document.addEventListener("click",e=>{
   e.preventDefault(); try{window.__TAURI__.opener.openUrl(a.href)}catch(err){}
 });
 /* read-only handle for automated tests */
-window.Taskal={get S(){return S},sem:()=>sem(),uniOf,uniDates,slotsOn,swapFor,parseISO};
+window.Taskal={checkLectures,get S(){return S},sem:()=>sem(),uniOf,uniDates,slotsOn,swapFor,parseISO};
 if(DEMO){$("#demoBar").hidden=false;$("#demoRestart").onclick=()=>{Object.assign(ONB,{text:null,cats:null,picked:{},names:{},extra:[],times:{},err:""});S=setupState();render();scrollTo(0,0)}}
 S=load();
 render();
@@ -2951,8 +2989,8 @@ if(Cloud.on()&&Cloud.signedIn()){Cloud.set(Cloud.meta().dirty?"pending":"synced"
 setInterval(()=>Cloud.pull(),5*60*1000);
 autoSync();
 setInterval(()=>{weeklyBackup();autoSync();updateSyncLabel()},10*60*1000);
-setInterval(checkReminders,60*1000);
-setTimeout(async()=>{ if(!S.setup&&S.rem.on&&IS_DESKTOP) await notifyAllowed(true); checkReminders(); },1500);
+setInterval(()=>{checkReminders();checkLectures()},60*1000); window.addEventListener("focus",()=>{ if(S&&!S.setup) checkLectures() });
+setTimeout(async()=>{ if(!S.setup&&S.rem.on&&IS_DESKTOP) await notifyAllowed(true); checkReminders(); checkLectures(); },1500);
 })();
 </script>
 </body>
