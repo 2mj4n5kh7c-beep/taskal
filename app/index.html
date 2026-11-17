@@ -222,6 +222,13 @@ table.matrix{border-collapse:separate;border-spacing:3px;font-size:12px}
 .cal-t .dot{width:7px;height:7px}
 .cal-t .tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .task.skipped{opacity:.6}
+.routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.route{display:grid;gap:3px;text-align:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card,transparent);color:inherit;font:inherit;cursor:pointer}
+.route:hover,.route:focus-visible{border-color:var(--accent)}.route b{font-size:13.5px}.route span{font-size:12px;color:var(--muted);line-height:1.4}
+.qadd{display:grid;gap:8px;margin-top:4px}.qrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.qrow .inp{width:auto}.qlab{font-size:13px;color:var(--muted);margin:0 2px}
+.qc{border:1px solid var(--line);background:transparent;color:inherit;border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
+.qc:hover{border-color:var(--accent)}.qc.on{background:var(--accent);border-color:var(--accent);color:#fff}.qrow .pill[disabled]{opacity:.5;cursor:default}.qrow [data-qadd]{margin-inline-start:auto;padding-inline:18px}
+.pastehint{margin:0 0 6px;padding:8px 10px;border-radius:8px;background:var(--accent-soft,rgba(47,111,214,.08))}
 .portalbox{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;display:grid;gap:8px}.portalbox p{margin:0;font-size:13.5px;line-height:1.5}.portalbox .ok{color:var(--good,#2e7d4f)}.portalbox .pill{justify-self:start}
 .offlabel.swap,.offtag.swap{color:var(--accent)}
 .sess.flash{animation:flash 1.1s ease 2}@keyframes flash{50%{box-shadow:0 0 0 3px var(--accent)}}@media (prefers-reduced-motion: reduce){.sess.flash{animation:none;box-shadow:0 0 0 3px var(--accent)}}
@@ -1977,16 +1984,29 @@ function parseTimetable(text){
     seen.forEach(r=>{if(r.weekly||r.n>=2) out.push(r)});
     if(!out.length) seen.forEach(r=>out.push(r)); // a single week's timetable
   } else {
+    let lastDay=-1, lastText="";
+    const dayOf=L=>{const lw=L.toLowerCase(); for(const [k,v] of Object.entries(WDN)){ if(new RegExp("(^|[^a-z])"+k+"([^a-z]|$)").test(lw)) return v }
+      for(const [k,v] of Object.entries(HEB_DAYS)){ if(new RegExp("(^|[\\s,(])(יום\\s+)?"+k+"['׳]?([\\s,):]|$)").test(L)) return v } return -1};
     text.split(/\n+/).forEach(line=>{
       const L=line.trim(); if(!L) return;
-      const times=L.match(/(\d{1,2}[:.]\d{2})\s*[-–—]\s*(\d{1,2}[:.]\d{2})/); if(!times) return;
+      const times=L.match(/(\d{1,2}[:.]\d{2})[^\d\n]{1,6}(\d{1,2}[:.]\d{2})/);
+      if(!times){const d=dayOf(L); if(d>=0&&L.length<30) lastDay=d; else if(L.length<80&&!/^\d/.test(L)) lastText=L; return}
       let wd=-1; const lw=L.toLowerCase();
       for(const [k,v] of Object.entries(WDN)){ if(new RegExp("(^|[^a-z])"+k+"([^a-z]|$)").test(lw)){wd=v;break} }
       if(wd<0) for(const [k,v] of Object.entries(HEB_DAYS)){ if(new RegExp("(^|[\\s,(])(יום\\s+)?"+k+"['׳]?([\\s,)]|$)").test(L)){wd=v;break} }
-      if(wd<0) return;
+      if(wd<0) wd=lastDay; if(wd<0) return;
       let name=L.replace(times[0],"").replace(/\b(sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(day|nesday|rsday|urday)?\b/i,"").replace(/(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי)/,"").replace(/(^|\s)(יום\s+)?[אבגדהו]['׳](?=\s|$)/," ").replace(/(^|\s)(תרגול|תרגיל|הרצאה|מעבדה|lecture|tutorial|recitation|lab)(?=\s|$)/gi," ").replace(/[|,;\t]+/g," ").replace(/\s+/g," ").trim();
       const room=(name.match(/\b(room|חדר)\s+([\w\u0590-\u05FF.\- ]+)$/i)||[])[2]||""; if(room) name=name.replace(/\b(room|חדר)\s+.+$/i,"").trim();
-      const r={name:name||"Untitled",weekday:wd,start:tm(times[1]),end:tm(times[2]),kind:kindOf(L),room};
+      let st=tm(times[1]),en=tm(times[2]); if(st>en) [st,en]=[en,st];
+      let room2="";
+      if(/\t/.test(L)){ // a row copied from a table: take the course cell, not the day, type, time, room or lecturer cells
+        const cells=L.split(/\t+/).map(x=>x.trim()).filter(Boolean);
+        const isMeta=x=>dayOf(x)>=0&&x.length<12||/^\d{1,2}[:.]\d{2}$/.test(x)||/^(הרצאה|תרגול|תרגיל|מעבדה|סמינר|שיעור|lecture|tutorial|lab|seminar)$/i.test(x)||/^(מר|גב'|ד"ר|פרופ'|dr\.?|prof\.?)\s/i.test(x);
+        const rm=cells.find(x=>/^[\d.\-\/ ]+$/.test(x)&&/\d+[.\-]\d/.test(x)&&!/[:]/.test(x)); if(rm) room2=rm;
+        const nm=cells.find(x=>/[a-z\u0590-\u05FF]{3}/i.test(x)&&!isMeta(x)); if(nm) name=nm;
+      }
+      if(!name.replace(/[\s\-–,|()'׳]/g,"")&&lastText) name=lastText;
+      const r={name:name||"Untitled",weekday:wd,start:st,end:en,kind:kindOf(L),room:room||room2};
       if(!seen.has(key(r))){seen.set(key(r),r);out.push(r)}
     });
   }
@@ -2018,14 +2038,14 @@ function guessCourseFor(name){
     const sc=ws.filter(w=>n.includes(w)).length/(ws.length||1); if(sc>score){score=sc;best=c}});
   return score>=.5?best.id:"";
 }
-function importTimetable(){
+function importTimetable(mode){
   let rows=[];
   const m=openModal(`<h2>Import your timetable</h2>
     <div class="field"><label for="ttUrl">Calendar link of your timetable</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="ttUrl" class="inp" style="flex:1;min-width:0" placeholder="https://… or webcal://…" spellcheck="false"><button class="pill" id="ttUrlGo" style="flex:none">Read</button></div>
       <p class="hint" style="margin:6px 0 0">From your student portal’s <b>Export to calendar / iCal</b>. If the portal only <b>syncs to Google Calendar</b>: in Google Calendar open <b>Settings</b> → that calendar → <b>Secret address in iCal format</b>, and paste it here.</p></div>
     <p class="hint">Or use a calendar file of your weekly classes, or paste your timetable as text (one class per line, like “Sun 10:00–11:45 Classical Mechanics”). Taskal finds the weekly times; you check them before anything is added.</p>
     <div class="row" style="gap:8px;margin-bottom:10px"><button class="pill" id="ttFile">Choose a calendar file (.ics)</button></div>
-    <div class="field"><label for="ttText">Or paste your timetable</label><textarea id="ttText" class="inp" dir="auto" rows="5" placeholder="Sun 10:00-11:45 Classical Mechanics, room 105&#10;יום ב' 14:00-15:45 תרגול מכניקה"></textarea></div>
+    <div class="field"><label for="ttText">Or paste your timetable</label>${mode==="paste"?`<p class="hint pastehint">On your student portal’s <b>website</b> (not the phone app), open your weekly timetable page, press <b>Ctrl+A</b> (<b>⌘A</b> on a Mac), copy, and paste here. Taskal keeps only the lines with a day and a time.</p>`:""}<textarea id="ttText" class="inp" dir="auto" rows="5" placeholder="Sun 10:00-11:45 Classical Mechanics, room 105&#10;יום ב' 14:00-15:45 תרגול מכניקה"></textarea></div>
     <div id="ttRes"></div>
     <div class="foot"><button class="pill" id="ttCancel">Cancel</button><button class="pill primary" id="ttGo" disabled>Add times</button></div>`,
   m=>{
@@ -2039,6 +2059,7 @@ function importTimetable(){
     };
     const load=text=>{rows=parseTimetable(text);rows.forEach(r=>r.course=guessCourseFor(r.name)||"__new");draw()};
     m.querySelector("#ttText").addEventListener("input",e=>load(e.target.value));
+    if(mode==="paste") setTimeout(()=>{const t=m.querySelector("#ttText"); t.focus(); t.scrollIntoView({block:"center"})},50);
     const ug=m.querySelector("#ttUrlGo"); ug.onclick=async()=>{const u=m.querySelector("#ttUrl").value.trim().replace(/^webcal:/i,"https:"); if(!/^https?:\/\//i.test(u)){res.innerHTML=`<div class="result err">Paste a link that starts with https:// or webcal://</div>`;return}
       const done=busy(ug,"Reading…"); try{const t=await fetchCalendar(u); if(!/BEGIN:VCALENDAR/.test(t)) throw new Error("That link isn’t a calendar."); load(t); if(!rows.length) res.innerHTML=`<div class="result err">The calendar has no classes that repeat every week.</div>`}catch(e){res.innerHTML=`<div class="result err">Couldn’t read that link (${esc(e.message||String(e))}).</div>`}finally{done()}};
     m.querySelector("#ttFile").onclick=()=>{const f=$("#fileIcs");f.value="";f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();r.onload=()=>load(String(r.result));r.readAsText(file)};f.click()};
@@ -2473,13 +2494,18 @@ function renderSetup(){
       ${(()=>{ if(!CATALOGS[S.uni]) autoTimesFromMoodle(); const empty=activeCourses().filter(c=>!(ONB.times[c.id]||[]).length).length;
         if(CATALOGS[S.uni]||(!ONB.autoN&&!empty)) return "";
         return `<div class="portalbox">${ONB.autoN?`<p class="ok">Found ${ONB.autoN} weekly session${ONB.autoN===1?"":"s"} in your Moodle calendar. Check them below.</p>`:""}
-          ${empty?`<p><b>${empty} course${empty===1?" has":"s have"} no times yet.</b> Get them from your student portal: if your weekly timetable there has <b>Export to calendar</b>, <b>Sync to Google Calendar</b> or <b>iCal</b>, use it here.</p>
-          <button class="pill primary" id="oPortal">Get my timetable from a calendar</button>`:""}</div>`})()}
+          ${empty?`<p><b>${empty} course${empty===1?" has":"s have"} no lecture times yet.</b> Pick the way that works for your university:</p>
+          <div class="routes">
+            <button class="route" id="oPortal"><b>From a calendar</b><span>Your portal has Export to calendar, iCal or Sync to Google Calendar</span></button>
+            <button class="route" id="oPortalPaste"><b>Paste from the portal’s website</b><span>Copy your weekly timetable page and paste it</span></button>
+            <button class="route" id="oByHand"><b>Add them by hand</b><span>A few taps per class, about 2 minutes</span></button>
+          </div>`:""}</div>`})()}
       <div class="olist">`;
     const inCat=c=>{const C=ONB.cat; return C&&C.loaded&&!C.applied&&C.info[courseNum(c)]};
     activeCourses().filter(c=>!inCat(c)).forEach(c=>{
       const rows=ONB.times[c.id]||(ONB.times[c.id]=S.slots.filter(x=>x.course===c.id).map(x=>Object.assign({},x)));
-      h+=`<div class="ogroup" data-c="${esc(c.id)}"><div class="ogh"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b></div>
+      const qOpen=!rows.length||ONB.qa===c.id, Q=(ONB.q||(ONB.q={}))[c.id]||(ONB.q[c.id]={day:null,start:"",len:90,kind:rows.length?"Tutorial":"Lecture"});
+      h+=`<div class="ogroup ${rows.length?"":"empty"}" data-c="${esc(c.id)}"><div class="ogh"><span class="dot" style="--c:${esc(c.color)}"></span><b dir="auto">${esc(c.name)}</b></div>
         ${rows.map((r,j)=>`<div class="otime" data-j="${j}">
           <select class="inp" data-tf="weekday" aria-label="Day">${DAYS_LONG.slice(0,6).map((d,k)=>`<option value="${k}" ${+r.weekday===k?"selected":""}>${d}</option>`).join("")}</select>
           <input class="inp" type="time" data-tf="start" value="${esc(r.start)}" aria-label="Starts">
@@ -2487,7 +2513,15 @@ function renderSetup(){
           <select class="inp" data-tf="kind" aria-label="Type">${["Lecture","Tutorial","Lab","Seminar"].map(k=>`<option ${r.kind===k?"selected":""}>${k}</option>`).join("")}</select>
           <input class="inp" data-tf="room" value="${esc(r.room||"")}" placeholder="Room" aria-label="Room" dir="auto">
           <button class="icon-btn" data-rmt="${j}" aria-label="Remove">${I.x}</button></div>`).join("")}
-        <button class="linkbtn" data-addt="${esc(c.id)}">+ Time</button></div>`;
+        ${qOpen?`<div class="qadd" data-q="${esc(c.id)}">
+          <div class="qrow" role="group" aria-label="Day">${["Sun","Mon","Tue","Wed","Thu","Fri"].map((d,k)=>`<button class="qc ${Q.day===k?"on":""}" data-qd="${k}" aria-pressed="${Q.day===k}">${d}</button>`).join("")}</div>
+          <div class="qrow">
+            <select class="inp" data-qs aria-label="Starts"><option value="">Starts at…</option>${Array.from({length:57},(_,i)=>{const m=7*60+i*15,v=pad(Math.floor(m/60))+":"+pad(m%60);return `<option ${Q.start===v?"selected":""}>${v}</option>`}).join("")}</select>
+            <span class="qlab">for</span>${[[60,"1h"],[90,"1½h"],[120,"2h"],[180,"3h"],[240,"4h"]].map(([m,l])=>`<button class="qc ${Q.len===m?"on":""}" data-ql="${m}">${l}</button>`).join("")}
+          </div>
+          <div class="qrow">${["Lecture","Tutorial","Lab"].map(k=>`<button class="qc ${Q.kind===k?"on":""}" data-qk="${k}">${k}</button>`).join("")}
+            <button class="pill primary sm" data-qadd ${Q.day==null||!Q.start?"disabled":""}>Add</button></div>
+        </div>`:`<button class="linkbtn" data-addt="${esc(c.id)}">+ Time</button>`}</div>`;
     });
     h+=`</div>
       ${ONB.addOpen?`<div class="row addnc" style="flex-wrap:nowrap;gap:8px"><input id="oNewC" class="inp" dir="auto" placeholder="${CATALOGS[S.uni]?"Course number, e.g. "+CATALOGS[S.uni].example:"Course name"}"><button class="pill" id="oNewCAdd">Add</button></div><div id="oNewCRes"></div>`:""}
@@ -2638,7 +2672,9 @@ function wireSetup(el,n){
     on("oBack",()=>{S.setup=2;render()});
     on("oLater",()=>finishSetup(false));
     on("oTT",importTimetable);
-    on("oPortal",importTimetable);
+    on("oPortal",()=>importTimetable());
+    on("oPortalPaste",()=>importTimetable("paste"));
+    on("oByHand",()=>{const g=el.querySelector(".ogroup.empty"); if(g){g.scrollIntoView({behavior:"smooth",block:"center"}); const b=g.querySelector("[data-qd]"); if(b) b.focus()}});
     on("oCat",loadCatalog); on("oCatApply",applyCatalog);
     on("oNewCAdd",()=>addCourseNoTasks(el));
     on("oSemEdit",()=>{ONB.semOpen=!ONB.semOpen;render()});
@@ -2650,7 +2686,17 @@ function wireSetup(el,n){
     const ud=el.querySelector("#oUniDates"); if(ud) ud.onchange=()=>{ONB.uniDates=ud.checked};
     const st=el.querySelector("#oStart"), wk=el.querySelector("#oWeeks");
     if(st) st.oninput=st.onchange=()=>{sem().start=st.value;const hh=el.querySelector("#oStartHint");if(hh)hh.textContent=st.value?longDate(parseISO(st.value)):""}; if(wk) wk.onchange=()=>{sem().weeks=Math.max(1,Math.min(30,+wk.value||13))};
-    el.querySelectorAll("[data-addt]").forEach(b=>b.onclick=()=>{const rows=ONB.times[b.dataset.addt];const last=rows[rows.length-1];rows.push({id:uid(),weekday:last?last.weekday:0,start:last?last.start:"10:00",end:last?last.end:"11:45",kind:rows.length?"Tutorial":"Lecture",room:""});render()});
+    el.querySelectorAll("[data-addt]").forEach(b=>b.onclick=()=>{ONB.qa=b.dataset.addt; const rows=ONB.times[b.dataset.addt]; ONB.q[b.dataset.addt]={day:null,start:"",len:90,kind:rows.length?"Tutorial":"Lecture"}; render()});
+    el.querySelectorAll("[data-q]").forEach(box=>{const cid=box.dataset.q, Q=ONB.q[cid];
+      box.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{Q.day=+b.dataset.qd; render()});
+      box.querySelectorAll("[data-ql]").forEach(b=>b.onclick=()=>{Q.len=+b.dataset.ql; render()});
+      box.querySelectorAll("[data-qk]").forEach(b=>b.onclick=()=>{Q.kind=b.dataset.qk; render()});
+      const sel=box.querySelector("[data-qs]"); sel.onchange=()=>{Q.start=sel.value; render()};
+      box.querySelector("[data-qadd]").onclick=()=>{ if(Q.day==null||!Q.start) return;
+        const m=toMin(Q.start)+Q.len, end=pad(Math.floor(m/60)%24)+":"+pad(m%60);
+        ONB.times[cid].push({id:uid(),course:cid,weekday:Q.day,start:Q.start,end,kind:Q.kind,room:""});
+        ONB.q[cid]={day:null,start:"",len:Q.len,kind:"Tutorial"}; ONB.qa=null; render(); };
+    });
     el.querySelectorAll("[data-c]").forEach(g=>{const rows=ONB.times[g.dataset.c];
       g.querySelectorAll("[data-j]").forEach(r=>{const row=rows[+r.dataset.j];
         r.querySelectorAll("[data-tf]").forEach(inp=>inp.onchange=inp.oninput=()=>{row[inp.dataset.tf]=inp.value});
